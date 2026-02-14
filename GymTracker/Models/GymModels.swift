@@ -1,0 +1,229 @@
+import Foundation
+import SwiftData
+
+// MARK: - Exercise Category
+enum ExerciseCategory: String, Codable, CaseIterable {
+    case push = "PUSH"
+    case pull = "PULL"
+    case legs = "LEGS"
+    case core = "CORE"
+    case cardio = "CARDIO"
+    case other = "OTHER"
+}
+
+// MARK: - Exercise
+@Model
+final class Exercise {
+    var id: UUID
+    var name: String
+    var category: ExerciseCategory
+    var notes: String
+    var restSeconds: Int
+    
+    // Progression Data
+    var currentWeight: Double
+    var targetIncrement: Double
+    var targetReps: Int
+    var targetSets: Int
+    
+    @Relationship(deleteRule: .cascade, inverse: \WorkoutSet.exercise)
+    var sets: [WorkoutSet]?
+    
+    init(
+        name: String,
+        category: ExerciseCategory,
+        notes: String = "",
+        restSeconds: Int = 120,
+        currentWeight: Double = 20.0,
+        targetIncrement: Double = 2.5,
+        targetReps: Int = 8,
+        targetSets: Int = 3
+    ) {
+        self.id = UUID()
+        self.name = name
+        self.category = category
+        self.notes = notes
+        self.restSeconds = restSeconds
+        self.currentWeight = currentWeight
+        self.targetIncrement = targetIncrement
+        self.targetReps = targetReps
+        self.targetSets = targetSets
+    }
+}
+
+// MARK: - Workout Program
+// Container for N-day split programs (e.g., Push/Pull/Legs, 5-day split)
+@Model
+final class WorkoutProgram {
+    var id: UUID
+    var name: String
+    var isActive: Bool
+    var createdAt: Date
+    
+    @Relationship(deleteRule: .cascade, inverse: \WorkoutTemplate.program)
+    var templates: [WorkoutTemplate]?
+    
+    /// Ordered templates by dayIndex
+    var orderedTemplates: [WorkoutTemplate] {
+        (templates ?? []).sorted { $0.dayIndex < $1.dayIndex }
+    }
+    
+    /// Number of workout days in this program
+    var dayCount: Int {
+        templates?.count ?? 0
+    }
+    
+    init(name: String, isActive: Bool = false) {
+        self.id = UUID()
+        self.name = name
+        self.isActive = isActive
+        self.createdAt = Date()
+    }
+}
+
+// MARK: - Workout Template
+@Model
+final class WorkoutTemplate {
+    var id: UUID
+    var name: String
+    var dayIndex: Int  // 0-based: Day 1 = 0, Day 2 = 1, etc.
+    var exercises: [Exercise]
+    
+    var program: WorkoutProgram?
+    
+    /// Display name like "DAY 1" or custom name
+    var displayName: String {
+        name.isEmpty ? "DAY \(dayIndex + 1)" : name
+    }
+    
+    init(name: String, dayIndex: Int = 0, exercises: [Exercise] = []) {
+        self.id = UUID()
+        self.name = name
+        self.dayIndex = dayIndex
+        self.exercises = exercises
+    }
+}
+
+// MARK: - Workout Session
+@Model
+final class WorkoutSession {
+    var id: UUID
+    var date: Date
+    var duration: TimeInterval
+    var notes: String
+    var isCompleted: Bool
+    var template: WorkoutTemplate?
+    
+    @Relationship(deleteRule: .cascade, inverse: \WorkoutSet.session)
+    var sets: [WorkoutSet]?
+    
+    init(
+        date: Date = Date(),
+        duration: TimeInterval = 0,
+        notes: String = "",
+        isCompleted: Bool = false,
+        template: WorkoutTemplate? = nil
+    ) {
+        self.id = UUID()
+        self.date = date
+        self.duration = duration
+        self.notes = notes
+        self.isCompleted = isCompleted
+        self.template = template
+    }
+}
+
+// MARK: - Workout Set
+@Model
+final class WorkoutSet {
+    var id: UUID
+    var setNumber: Int
+    var reps: Int
+    var weight: Double
+    var rpe: Int?
+    var isCompleted: Bool = false
+    var isSkipped: Bool = false
+    var timestamp: Date = Date()
+    
+    var exercise: Exercise?
+    var session: WorkoutSession?
+    
+    /// Epley Formula: 1RM = weight × (1 + reps/30)
+    var estimated1RM: Double {
+        guard reps > 0 && reps <= 10 else { return weight }
+        if reps == 1 { return weight }
+        return weight * (1.0 + Double(reps) / 30.0)
+    }
+    
+    init(
+        setNumber: Int = 1,
+        reps: Int,
+        weight: Double,
+        rpe: Int? = nil,
+        isCompleted: Bool = false,
+        isSkipped: Bool = false
+    ) {
+        self.id = UUID()
+        self.setNumber = setNumber
+        self.reps = reps
+        self.weight = weight
+        self.rpe = rpe
+        self.isCompleted = isCompleted
+        self.isSkipped = isSkipped
+        self.timestamp = Date()
+    }
+}
+
+// MARK: - Exercise History Extension
+extension Exercise {
+    /// Returns the last completed sets for this exercise from a previous session
+    func lastSessionSets(in context: ModelContext) -> [WorkoutSet] {
+        let exerciseId = self.id
+        let descriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate { set in
+                set.exercise?.id == exerciseId && set.isCompleted
+            },
+            sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
+        )
+        
+        guard let allSets = try? context.fetch(descriptor),
+              let lastSession = allSets.first?.session else {
+            return []
+        }
+        
+        let lastSessionId = lastSession.id
+        return allSets.filter { $0.session?.id == lastSessionId }
+            .sorted { $0.setNumber < $1.setNumber }
+    }
+    
+    /// Formatted string for history overlay: "LAST: 100kg × 5 @ RPE 8"
+    func lastSessionSummary(in context: ModelContext) -> String? {
+        let sets = lastSessionSets(in: context)
+        guard let topSet = sets.max(by: { $0.weight < $1.weight }) else {
+            return nil
+        }
+        
+        var summary = "LAST: \(Int(topSet.weight))kg × \(topSet.reps)"
+        if let rpe = topSet.rpe {
+            summary += " @ RPE \(rpe)"
+        }
+        return summary
+    }
+}
+
+// MARK: - Program Cycling Extension
+extension WorkoutProgram {
+    /// Get the next template in rotation after a given template
+    func nextTemplate(after template: WorkoutTemplate?) -> WorkoutTemplate? {
+        let ordered = orderedTemplates
+        guard !ordered.isEmpty else { return nil }
+        
+        guard let current = template,
+              let currentIndex = ordered.firstIndex(where: { $0.id == current.id }) else {
+            return ordered.first
+        }
+        
+        let nextIndex = (currentIndex + 1) % ordered.count
+        return ordered[nextIndex]
+    }
+}
