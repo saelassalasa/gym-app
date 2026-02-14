@@ -4,7 +4,7 @@ import SwiftData
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
-    @StateObject private var calendarManager = CalendarManager.shared
+    @State private var calendarManager = CalendarManager.shared
     
     // Query ALL sessions - this is what History tab shows
     @Query(sort: \WorkoutSession.date, order: .reverse) private var allSessions: [WorkoutSession]

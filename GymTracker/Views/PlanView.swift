@@ -11,7 +11,7 @@ struct PlanView: View {
     @Query private var templates: [WorkoutTemplate]
     
     // Calendar Manager - Singleton
-    @StateObject private var calendarManager = CalendarManager.shared
+    @State private var calendarManager = CalendarManager.shared
     
     // SINGLE STATE TRIGGER - If non-nil, sheet is open
     @State private var selectedDate: Date?
@@ -486,8 +486,8 @@ extension Date: @retroactive Identifiable {
 
 struct SchedulerSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var calendarManager = CalendarManager.shared
-    
+    @State private var calendarManager = CalendarManager.shared
+
     let date: Date
     let templates: [WorkoutTemplate]
     let onSchedule: (String, Date) -> Void

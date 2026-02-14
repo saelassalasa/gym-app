@@ -1,4 +1,5 @@
 import Foundation
+import Observation
 import EventKit
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -7,14 +8,15 @@ import EventKit
 // ═══════════════════════════════════════════════════════════════════════════
 
 @MainActor
-final class CalendarManager: ObservableObject {
+@Observable
+final class CalendarManager {
     static let shared = CalendarManager()
-    
+
     private let eventStore = EKEventStore()
     private let eventPrefix = "[IRON]"
-    
-    @Published private(set) var hasAccess = false
-    @Published private(set) var scheduledDates: Set<Date> = []
+
+    private(set) var hasAccess = false
+    private(set) var scheduledDates: Set<Date> = []
     
     private init() {}
     
@@ -307,28 +309,7 @@ final class CalendarManager: ObservableObject {
         print("🎯 AUTOPILOT COMPLETE: Scheduled \\(scheduledCount) workouts from \\(sortedTemplates.count)-day program")
         return scheduledCount
     }
-    
-    /// Legacy support: Deploy A/B split (now uses deployProgram internally)
-    @available(*, deprecated, message: "Use deployProgram with templates array")
-    func deployABSplit(templateA: String, templateB: String) async -> Int {
-        // This is kept for backwards compatibility but should use deployProgram
-        let pattern: [String?] = [
-            templateA,  // Mon
-            templateB,  // Tue
-            templateA,  // Wed
-            templateB,  // Thu
-            templateA,  // Fri
-            templateB,  // Sat
-            nil         // Sun (Rest)
-        ]
-        
-        return await deployRoutine(
-            pattern: pattern,
-            templateNames: [templateA, templateB],
-            weeks: 4
-        )
-    }
-    
+
     // ═══════════════════════════════════════════════════════════════════════
     // PURGE FUTURE EVENTS
     // ═══════════════════════════════════════════════════════════════════════

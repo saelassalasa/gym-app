@@ -28,7 +28,6 @@
 		E80A8C8AE4E999E2CE2C02D4 /* GymModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1C239461BABB0C4301C75079 /* GymModels.swift */; };
 		EE007ABDA2DCC9D4C10F40F5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCE0376DC069391EFFCE1032 /* SettingsView.swift */; };
 		F0711660F7C25BE836C9420B /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 2306CBC2525E1DCB990B8273 /* Assets.xcassets */; };
-		F9E11EFED10AB8D91EFD6F5A /* PlanViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E62ABED11EAE0940DC0125A8 /* PlanViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,7 +53,6 @@
 		DC1871744E96083B4E91804B /* ProgramSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramSetupView.swift; sourceTree = "<group>"; };
 		DCE0376DC069391EFFCE1032 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E43EA7CB696777B1FE16A150 /* BrutalistTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrutalistTheme.swift; sourceTree = "<group>"; };
-		E62ABED11EAE0940DC0125A8 /* PlanViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlanViewModel.swift; sourceTree = "<group>"; };
 		FAF74960D6D614393127D45B /* ProgressView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -107,7 +105,6 @@
 			isa = PBXGroup;
 			children = (
 				5C705B2D279A164E20B74ABC /* CalendarManager.swift */,
-				E62ABED11EAE0940DC0125A8 /* PlanViewModel.swift */,
 				B7835BE743480E58797DFC1E /* ProgressionManager.swift */,
 				385A7AC424B8EE7DE3733999 /* WorkoutManager.swift */,
 			);
@@ -218,7 +215,6 @@
 				1D13212BC7A3B773F224616E /* HistoryView.swift in Sources */,
 				2E0ECAC8EFA779E529E64611 /* ImageImportView.swift in Sources */,
 				5F0A32D8524961F31D3CCEC4 /* PlanView.swift in Sources */,
-				F9E11EFED10AB8D91EFD6F5A /* PlanViewModel.swift in Sources */,
 				DA40EE576A9E385982D573EC /* PlateCalculatorView.swift in Sources */,
 				120F3D407AC38C29A51E183D /* ProgramDetailView.swift in Sources */,
 				D3C2A7014A324AFED62F58F4 /* ProgramSetupView.swift in Sources */,

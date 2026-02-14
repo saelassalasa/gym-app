@@ -271,7 +271,7 @@ struct DashboardView: View {
                 }
             }
             .padding(Wire.Layout.pad)
-            .background(program.isActive ? Wire.Color.black : Wire.Color.black)
+            .background(Wire.Color.black)
             .overlay(Rectangle().stroke(program.isActive ? Wire.Color.white : Wire.Color.dark, lineWidth: Wire.Layout.border))
             .contextMenu {
                 Button {
@@ -470,12 +470,13 @@ struct StatsHeaderView: View {
         let calendar = Calendar.current
         var streak = 0
         var day = calendar.startOfDay(for: Date())
-        
+
         for session in sessions {
             let sessionDay = calendar.startOfDay(for: session.date)
             if sessionDay == day {
                 streak += 1
-                day = calendar.date(byAdding: .day, value: -1, to: day)!
+                guard let previousDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+                day = previousDay
             } else if sessionDay < day {
                 break
             }
