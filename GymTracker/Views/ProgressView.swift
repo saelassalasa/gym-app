@@ -10,30 +10,53 @@ import Charts
 struct ProgressView: View {
     @Query private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .forward) private var sessions: [WorkoutSession]
-    @State private var selected: Exercise?
-    
+    @State private var selectedName: String?
+    @State private var chartMode: ChartMode = .weight
+
+    enum ChartMode {
+        case weight, volume, e1rm
+    }
+
+    /// Unique exercise names, case-insensitive deduped, sorted alphabetically
+    private var uniqueNames: [String] {
+        let grouped = Dictionary(grouping: exercises, by: { $0.name.lowercased() })
+        return grouped.keys
+            .compactMap { key in grouped[key]?.first?.name }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
     var body: some View {
         ZStack {
             Wire.Color.black.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 header
-                selector
-                
-                if let ex = selected {
-                    chartView(for: ex)
-                } else {
-                    emptyState
+
+                ScrollView {
+                    VStack(spacing: Wire.Layout.gap) {
+                        selector
+
+                        if let name = selectedName {
+                            let data = getDataPoints(forExerciseName: name)
+                            summaryStats(data: data)
+                            chartPicker
+                            chartView(data: data)
+                        } else {
+                            emptyState
+                        }
+                    }
+                    .padding(.horizontal, Wire.Layout.pad)
+                    .padding(.top, Wire.Layout.gap)
                 }
-                
-                Spacer()
+
+                Spacer(minLength: 0)
             }
         }
         .onAppear {
-            if selected == nil { selected = exercises.first }
+            if selectedName == nil { selectedName = uniqueNames.first }
         }
     }
-    
+
     private var header: some View {
         HStack {
             Text("PROGRESS")
@@ -47,15 +70,17 @@ struct ProgressView: View {
         .background(Wire.Color.black)
         .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
-    
+
+    // MARK: - Exercise Selector (grouped by name)
+
     private var selector: some View {
         Menu {
-            ForEach(exercises) { ex in
-                Button(ex.name.uppercased()) { selected = ex }
+            ForEach(uniqueNames, id: \.self) { name in
+                Button(name.uppercased()) { selectedName = name }
             }
         } label: {
             HStack {
-                Text(selected?.name.uppercased() ?? "SELECT")
+                Text(selectedName?.uppercased() ?? "SELECT")
                     .font(Wire.Font.body)
                     .foregroundColor(Wire.Color.black)
                     .kerning(1)
@@ -67,24 +92,84 @@ struct ProgressView: View {
             .padding(Wire.Layout.pad)
             .background(Wire.Color.white)
         }
-        .padding(Wire.Layout.pad)
     }
-    
-    private func chartView(for exercise: Exercise) -> some View {
-        let data = getDataPoints(for: exercise)
-        
-        return Group {
+
+    // MARK: - Summary Stats
+
+    private func summaryStats(data: [DataPoint]) -> some View {
+        HStack(spacing: 0) {
+            statCell("BEST", data.map(\.weight).max().map { "\(Int($0))" } ?? "—")
+            statCell("EST 1RM", data.map(\.estimated1RM).max().map { "\(Int($0))" } ?? "—")
+            statCell("VOLUME", {
+                let total = data.map(\.volume).reduce(0, +)
+                if total >= 1000 {
+                    return String(format: "%.1fK", total / 1000)
+                }
+                return "\(Int(total))"
+            }())
+        }
+    }
+
+    private func statCell(_ label: String, _ value: String) -> some View {
+        VStack(spacing: 2) {
+            Text(value)
+                .font(Wire.Font.header)
+                .foregroundColor(Wire.Color.white)
+            Text(label)
+                .font(Wire.Font.tiny)
+                .foregroundColor(Wire.Color.gray)
+                .kerning(1)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(Wire.Color.black)
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+    }
+
+    // MARK: - Chart Mode Picker
+
+    private var chartPicker: some View {
+        HStack(spacing: 0) {
+            chartTab("WEIGHT", mode: .weight)
+            chartTab("VOLUME", mode: .volume)
+            chartTab("EST 1RM", mode: .e1rm)
+        }
+    }
+
+    private func chartTab(_ label: String, mode: ChartMode) -> some View {
+        let isSelected = chartMode == mode
+        return Button {
+            Wire.tap()
+            chartMode = mode
+        } label: {
+            Text(label)
+                .font(Wire.Font.caption)
+                .kerning(1)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 10)
+                .foregroundColor(isSelected ? Wire.Color.black : Wire.Color.white)
+                .background(isSelected ? Wire.Color.white : Wire.Color.black)
+                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+        }
+        .buttonStyle(WireButtonStyle())
+    }
+
+    // MARK: - Chart
+
+    private func chartView(data: [DataPoint]) -> some View {
+        Group {
             if data.isEmpty {
                 Text("NO DATA")
                     .font(Wire.Font.body)
                     .foregroundColor(Wire.Color.gray)
-                    .padding()
+                    .frame(height: 250)
+                    .frame(maxWidth: .infinity)
             } else {
                 Chart {
                     ForEach(data) { point in
                         LineMark(
                             x: .value("Date", point.date),
-                            y: .value("Weight", point.weight)
+                            y: .value("Value", chartValue(for: point))
                         )
                         .foregroundStyle(Wire.Color.white)
                         .symbol {
@@ -114,11 +199,20 @@ struct ProgressView: View {
                 .padding(Wire.Layout.pad)
                 .background(Wire.Color.black)
                 .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
-                .padding(.horizontal, Wire.Layout.pad)
             }
         }
     }
-    
+
+    private func chartValue(for point: DataPoint) -> Double {
+        switch chartMode {
+        case .weight: return point.weight
+        case .volume: return point.volume
+        case .e1rm: return point.estimated1RM
+        }
+    }
+
+    // MARK: - Empty State
+
     private var emptyState: some View {
         VStack {
             Spacer()
@@ -128,23 +222,38 @@ struct ProgressView: View {
             Spacer()
         }
     }
-    
+
+    // MARK: - Data
+
     struct DataPoint: Identifiable {
         let id = UUID()
         let date: Date
         let weight: Double
+        let volume: Double
+        let estimated1RM: Double
     }
-    
-    func getDataPoints(for exercise: Exercise) -> [DataPoint] {
+
+    func getDataPoints(forExerciseName name: String) -> [DataPoint] {
+        let lowered = name.lowercased()
         var points: [DataPoint] = []
+
         for session in sessions {
-            if let sets = session.sets {
-                let exSets = sets.filter { $0.exercise?.id == exercise.id }
-                if let max = exSets.map({ $0.weight }).max() {
-                    points.append(DataPoint(date: session.date, weight: max))
-                }
-            }
+            guard let sets = session.sets else { continue }
+            let matchingSets = sets.filter { $0.exercise?.name.lowercased() == lowered }
+            guard !matchingSets.isEmpty else { continue }
+
+            let maxWeight = matchingSets.map(\.weight).max() ?? 0
+            let totalVolume = matchingSets.reduce(0.0) { $0 + Double($1.reps) * $1.weight }
+            let bestE1RM = matchingSets.map(\.estimated1RM).max() ?? 0
+
+            points.append(DataPoint(
+                date: session.date,
+                weight: maxWeight,
+                volume: totalVolume,
+                estimated1RM: bestE1RM
+            ))
         }
-        return points
+
+        return points.sorted { $0.date < $1.date }
     }
 }
