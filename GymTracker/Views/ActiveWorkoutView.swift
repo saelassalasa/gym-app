@@ -12,18 +12,33 @@ struct ActiveWorkoutView: View {
     @State private var showPlateCalc = false
     @State private var showWarmup = false
     @State private var showAbortAlert = false
-    
+    @State private var showSummary = false
+
     init(manager: WorkoutManager) {
         _manager = State(initialValue: manager)
     }
-    
+
     var body: some View {
+        if showSummary {
+            WorkoutSummaryView(
+                viewModel: WorkoutSummaryViewModel(
+                    session: manager.session,
+                    prResults: manager.prResults,
+                    context: manager.summaryContext
+                )
+            )
+        } else {
+            workoutBody
+        }
+    }
+
+    private var workoutBody: some View {
         ZStack {
             Wire.Color.black.ignoresSafeArea()
-            
+
             VStack(spacing: 0) {
                 header
-                
+
                 ScrollView {
                     VStack(spacing: Wire.Layout.gap) {
                         toolsRow
@@ -33,10 +48,10 @@ struct ActiveWorkoutView: View {
                     }
                     .padding(Wire.Layout.pad)
                 }
-                
+
                 bottomBar
             }
-            
+
             if manager.isTimerActive {
                 timerOverlay
             }
@@ -159,10 +174,37 @@ struct ActiveWorkoutView: View {
     
     private var setsSection: some View {
         VStack(alignment: .leading, spacing: 4) {
-            if !manager.setsForCurrentExercise.isEmpty {
-                ForEach(manager.setsForCurrentExercise, id: \.id) { set in
-                    setRow(set)
+            // Set progress indicator
+            if let exercise = manager.currentExercise {
+                let completed = manager.setsForCurrentExercise.filter { $0.isCompleted && !$0.isSkipped }.count
+                let target = exercise.targetSets
+                HStack {
+                    Text("SETS")
+                        .font(Wire.Font.caption)
+                        .foregroundColor(Wire.Color.gray)
+                        .kerning(1)
+
+                    Spacer()
+
+                    Text("\(completed)/\(target)")
+                        .font(Wire.Font.sub)
+                        .foregroundColor(completed >= target ? Wire.Color.white : Wire.Color.gray)
+
+                    if completed >= target {
+                        Text("DONE")
+                            .font(Wire.Font.tiny)
+                            .foregroundColor(Wire.Color.black)
+                            .kerning(1)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Wire.Color.white)
+                    }
                 }
+                .padding(.bottom, 4)
+            }
+
+            ForEach(manager.setsForCurrentExercise, id: \.id) { set in
+                setRow(set)
             }
         }
     }
@@ -322,7 +364,7 @@ struct ActiveWorkoutView: View {
             // FINISH BUTTON
             Button(action: {
                 manager.finishWorkout()
-                dismiss()
+                showSummary = true
             }) {
                 Text("FINISH")
                     .font(Wire.Font.body)

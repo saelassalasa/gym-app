@@ -51,8 +51,8 @@ final class Exercise {
     var id: UUID
     var name: String
     var category: ExerciseCategory
-    var exerciseType: ExerciseType
-    var primaryMuscle: MuscleGroup
+    var exerciseType: ExerciseType?
+    var primaryMuscle: MuscleGroup?
     var notes: String
     var restSeconds: Int
 
@@ -89,6 +89,10 @@ final class Exercise {
         self.targetReps = targetReps
         self.targetSets = targetSets
     }
+
+    /// Safe accessors with defaults for legacy data (pre-migration exercises without these fields)
+    var resolvedExerciseType: ExerciseType { exerciseType ?? .compound }
+    var resolvedPrimaryMuscle: MuscleGroup { primaryMuscle ?? .chest }
 }
 
 // MARK: - Workout Program

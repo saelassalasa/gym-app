@@ -188,7 +188,7 @@ struct GenerateProgramView: View {
 
             ForEach(exercises) { ex in
                 HStack {
-                    Text(ex.exerciseType == .compound ? "C" : "A")
+                    Text(ex.resolvedExerciseType == .compound ? "C" : "A")
                         .font(Wire.Font.tiny)
                         .foregroundColor(Wire.Color.black)
                         .frame(width: 16, height: 16)
@@ -201,7 +201,7 @@ struct GenerateProgramView: View {
 
                     Spacer()
 
-                    Text(ex.primaryMuscle.rawValue.uppercased())
+                    Text(ex.resolvedPrimaryMuscle.rawValue.uppercased())
                         .font(Wire.Font.tiny)
                         .foregroundColor(Wire.Color.gray)
 
@@ -245,9 +245,12 @@ struct GenerateProgramView: View {
             exercise.restSeconds = rx.restSeconds
         }
 
-        // Insert ONLY the template — SwiftData manages the exercises automatically.
-        // This matches the proven WorkoutTemplateView.save() pattern.
+        // Create template and wrap in a program so it shows on the Dashboard.
+        // Dashboard queries WorkoutProgram, not standalone templates.
         let template = WorkoutTemplate(name: templateName, dayIndex: 0, exercises: exercises)
+        let program = WorkoutProgram(name: templateName)
+        template.program = program
+        modelContext.insert(program)
         modelContext.insert(template)
         try? modelContext.save()
         dismiss()

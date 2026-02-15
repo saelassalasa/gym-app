@@ -2,12 +2,33 @@ import SwiftUI
 import SwiftData
 
 // ═══════════════════════════════════════════════════════════════════════════
+// RECOVERY COLORS — Shared across all recovery UI
+// ═══════════════════════════════════════════════════════════════════════════
+
+enum RecoveryColor {
+    static let ready       = Color(hex: "4CAF50") // Green
+    static let recovering  = Color(hex: "FFC107") // Yellow/Amber
+    static let fatigued    = Color(hex: "F44336") // Red
+    static let atrophy     = Color(hex: "9C27B0") // Purple
+
+    static func from(_ phase: RecoveryPhase) -> Color {
+        switch phase {
+        case .ready:        return ready
+        case .recovering:   return recovering
+        case .fatigued:     return fatigued
+        case .atrophyRisk:  return atrophy
+        }
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // RECOVERY DASHBOARD VIEW
-// SRA-based muscle recovery status. Banister fatigue decay model.
+// SRA-based muscle recovery status. Qualitative color-coded states.
 // ═══════════════════════════════════════════════════════════════════════════
 
 struct RecoveryDashboardView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var statuses: [MuscleStatus] = []
 
     var body: some View {
@@ -27,6 +48,9 @@ struct RecoveryDashboardView: View {
             }
         }
         .task { loadStatuses() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { loadStatuses() }
+        }
         .navigationBarTitleDisplayMode(.inline)
     }
 
@@ -54,16 +78,16 @@ struct RecoveryDashboardView: View {
 
     private var legend: some View {
         HStack(spacing: Wire.Layout.gap) {
-            legendItem("PEAKED", Wire.Color.white)
-            legendItem("READY", Wire.Color.gray)
-            legendItem("RECOVERING", Wire.Color.dark)
-            legendItem("FATIGUED", Wire.Color.danger)
+            legendItem("READY", RecoveryColor.ready)
+            legendItem("RECOVERING", RecoveryColor.recovering)
+            legendItem("FATIGUED", RecoveryColor.fatigued)
+            legendItem("ATROPHY", RecoveryColor.atrophy)
         }
     }
 
     private func legendItem(_ label: String, _ color: Color) -> some View {
         HStack(spacing: 4) {
-            Rectangle()
+            Circle()
                 .fill(color)
                 .frame(width: 8, height: 8)
             Text(label)
@@ -83,63 +107,50 @@ struct RecoveryDashboardView: View {
     }
 
     private func muscleCard(_ status: MuscleStatus) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
+        let color = RecoveryColor.from(status.phase)
+
+        return VStack(alignment: .leading, spacing: 6) {
             HStack {
+                Circle()
+                    .fill(color)
+                    .frame(width: 8, height: 8)
+
                 Text(status.muscle.rawValue.uppercased())
                     .font(Wire.Font.body)
                     .foregroundColor(Wire.Color.white)
                     .kerning(1)
 
                 Spacer()
-
-                Text(status.phase.rawValue)
-                    .font(Wire.Font.tiny)
-                    .foregroundColor(phaseColor(status.phase))
-                    .kerning(0.5)
             }
+
+            Text(status.phase.rawValue)
+                .font(Wire.Font.caption)
+                .foregroundColor(color)
+                .kerning(0.5)
 
             // Recovery bar
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Rectangle()
                         .fill(Wire.Color.dark)
-                        .frame(height: 4)
+                        .frame(height: 3)
 
                     Rectangle()
-                        .fill(phaseColor(status.phase))
-                        .frame(width: geo.size.width * status.recoveryPercent, height: 4)
+                        .fill(color)
+                        .frame(width: geo.size.width * status.recoveryPercent, height: 3)
                 }
             }
-            .frame(height: 4)
+            .frame(height: 3)
 
-            HStack {
-                Text("\(Int(status.recoveryPercent * 100))%")
-                    .font(Wire.Font.caption)
-                    .foregroundColor(Wire.Color.white)
-
-                Spacer()
-
-                if status.hoursUntilReady > 0 {
-                    Text("\(Int(status.hoursUntilReady))h")
-                        .font(Wire.Font.caption)
-                        .foregroundColor(Wire.Color.gray)
-                }
+            if status.hoursUntilReady > 0 {
+                Text("\(Int(status.hoursUntilReady))H UNTIL READY")
+                    .font(Wire.Font.tiny)
+                    .foregroundColor(Wire.Color.gray)
             }
         }
         .padding(Wire.Layout.pad)
         .background(Wire.Color.black)
-        .overlay(Rectangle().stroke(phaseColor(status.phase).opacity(0.5), lineWidth: Wire.Layout.border))
-    }
-
-    // MARK: - Helpers
-
-    private func phaseColor(_ phase: RecoveryPhase) -> Color {
-        switch phase {
-        case .peaked:     return Wire.Color.white
-        case .ready:      return Wire.Color.gray
-        case .recovering: return Wire.Color.dark
-        case .fatigued:   return Wire.Color.danger
-        }
+        .overlay(Rectangle().stroke(color.opacity(0.4), lineWidth: Wire.Layout.border))
     }
 
     private func loadStatuses() {
@@ -150,10 +161,12 @@ struct RecoveryDashboardView: View {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // RECOVERY STRIP — Compact inline version for DashboardView
+// Refreshes on scenePhase change (returning from workout).
 // ═══════════════════════════════════════════════════════════════════════════
 
 struct RecoveryStripView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.scenePhase) private var scenePhase
     @State private var statuses: [MuscleStatus] = []
 
     var body: some View {
@@ -165,23 +178,27 @@ struct RecoveryStripView: View {
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 4), count: 5), spacing: 4) {
                 ForEach(statuses) { status in
+                    let color = RecoveryColor.from(status.phase)
                     VStack(spacing: 2) {
                         Text(shortName(status.muscle))
                             .font(Wire.Font.tiny)
-                            .foregroundColor(stripColor(status.phase))
+                            .foregroundColor(color)
 
-                        Text("\(Int(status.recoveryPercent * 100))")
-                            .font(Wire.Font.caption)
-                            .foregroundColor(Wire.Color.white)
+                        Circle()
+                            .fill(color)
+                            .frame(width: 6, height: 6)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 4)
                     .background(Wire.Color.black)
-                    .overlay(Rectangle().stroke(stripColor(status.phase).opacity(0.4), lineWidth: Wire.Layout.border))
+                    .overlay(Rectangle().stroke(color.opacity(0.3), lineWidth: Wire.Layout.border))
                 }
             }
         }
         .task { loadStatuses() }
+        .onChange(of: scenePhase) { _, phase in
+            if phase == .active { loadStatuses() }
+        }
     }
 
     private func shortName(_ muscle: MuscleGroup) -> String {
@@ -196,15 +213,6 @@ struct RecoveryStripView: View {
         case .triceps:    return "TRIS"
         case .calves:     return "CALV"
         case .core:       return "CORE"
-        }
-    }
-
-    private func stripColor(_ phase: RecoveryPhase) -> Color {
-        switch phase {
-        case .peaked:     return Wire.Color.white
-        case .ready:      return Wire.Color.gray
-        case .recovering: return Wire.Color.dark
-        case .fatigued:   return Wire.Color.danger
         }
     }
 

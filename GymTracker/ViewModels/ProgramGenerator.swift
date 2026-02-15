@@ -56,11 +56,11 @@ enum ProgramGenerator {
             // Israetel/RP: 3 sets, 8-12 reps, RPE 8
             return SetPrescription(
                 sets: 3, repMin: 8, repMax: 12, rpe: 8,
-                restSeconds: exercise.exerciseType == .compound ? 150 : 90
+                restSeconds: exercise.resolvedExerciseType == .compound ? 150 : 90
             )
 
         case .powerbuilding:
-            if exercise.exerciseType == .compound {
+            if exercise.resolvedExerciseType == .compound {
                 // Heavy strength: 4×3-5 @RPE 9, long rest
                 return SetPrescription(
                     sets: 4, repMin: 3, repMax: 5, rpe: 9,

@@ -8,10 +8,10 @@ import SwiftData
 // ═══════════════════════════════════════════════════════════════════════════
 
 enum RecoveryPhase: String {
-    case fatigued   = "FATIGUED"
-    case recovering = "RECOVERING"
-    case ready      = "READY"
-    case peaked     = "PEAKED"
+    case fatigued     = "FATIGUED"
+    case recovering   = "RECOVERING"
+    case ready        = "READY"
+    case atrophyRisk  = "ATROPHY RISK"
 }
 
 struct FatigueEvent {
@@ -79,6 +79,17 @@ enum RecoveryEngine {
     ) -> [MuscleStatus] {
         muscles.map { muscle in
             let relevant = events.filter { $0.muscle == muscle }
+
+            // If no events for this muscle, check if it's atrophy risk
+            if relevant.isEmpty {
+                return MuscleStatus(
+                    muscle: muscle,
+                    recoveryPercent: 1.0,
+                    hoursUntilReady: 0,
+                    phase: .atrophyRisk
+                )
+            }
+
             var totalFatigue = 0.0
 
             for event in relevant {
@@ -94,12 +105,19 @@ enum RecoveryEngine {
 
             let recoveryPercent = min(1.0, max(0, 1.0 - totalFatigue))
 
+            // Check for atrophy risk: most recent event is older than 5 days
+            let mostRecent = relevant.map(\.date).max() ?? .distantPast
+            let hoursSinceLast = now.timeIntervalSince(mostRecent) / 3600.0
+
             let phase: RecoveryPhase
-            switch recoveryPercent {
-            case ..<0.80: phase = .fatigued
-            case ..<0.95: phase = .recovering
-            case ..<1.00: phase = .ready
-            default:      phase = .peaked
+            if hoursSinceLast > 120 { // 5+ days since last training
+                phase = .atrophyRisk
+            } else if recoveryPercent < 0.80 {
+                phase = .fatigued
+            } else if recoveryPercent < 0.95 {
+                phase = .recovering
+            } else {
+                phase = .ready
             }
 
             let hoursUntilReady: Double
@@ -137,18 +155,18 @@ enum RecoveryEngine {
             let rpes = sets.compactMap(\.rpe).map(Double.init)
             let avgRPE = rpes.isEmpty ? 8.0 : rpes.reduce(0, +) / Double(rpes.count)
             return FatigueEvent(
-                muscle: exercise.primaryMuscle,
+                muscle: exercise.resolvedPrimaryMuscle,
                 sets: sets.count,
                 rpe: avgRPE,
-                isCompound: exercise.exerciseType == .compound,
+                isCompound: exercise.resolvedExerciseType == .compound,
                 date: session.date
             )
         }
     }
 
-    /// Extract all fatigue events from recent sessions (last 7 days)
+    /// Extract all fatigue events from recent sessions (last 14 days)
     static func extractRecentEvents(context: ModelContext) -> [FatigueEvent] {
-        let cutoff = Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date()
+        let cutoff = Calendar.current.date(byAdding: .day, value: -14, to: Date()) ?? Date()
         let descriptor = FetchDescriptor<WorkoutSession>(
             predicate: #Predicate { session in
                 session.isCompleted && session.date > cutoff

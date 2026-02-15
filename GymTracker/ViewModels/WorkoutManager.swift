@@ -13,6 +13,7 @@ final class WorkoutManager {
     // MARK: - State
     private(set) var session: WorkoutSession
     private let context: ModelContext
+    var summaryContext: ModelContext { context }
     
     var currentExerciseIndex: Int = 0
     var weightInput: Double = 0
