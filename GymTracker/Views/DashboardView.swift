@@ -112,21 +112,31 @@ struct DashboardView: View {
                 .kerning(3)
             
             Spacer()
-            
+
+            Button {
+                Wire.tap()
+                showGenerator = true
+            } label: {
+                Text("⚡")
+                    .font(Wire.Font.header)
+                    .foregroundColor(Wire.Color.white)
+                    .frame(width: 40, height: 40)
+            }
+
             NavigationLink(destination: ProgressView()) {
                 Text("◉")
                     .font(Wire.Font.header)
                     .foregroundColor(Wire.Color.white)
                     .frame(width: 40, height: 40)
             }
-            
+
             NavigationLink(destination: HistoryView()) {
                 Text("☰")
                     .font(Wire.Font.header)
                     .foregroundColor(Wire.Color.white)
                     .frame(width: 40, height: 40)
             }
-            
+
             Button {
                 Wire.tap()
                 showSettings = true
@@ -205,12 +215,6 @@ struct DashboardView: View {
                 
                 Spacer()
                 
-                Button(action: { showGenerator = true }) {
-                    Text("⚡")
-                        .font(Wire.Font.header)
-                        .foregroundColor(Wire.Color.white)
-                }
-
                 Button(action: { showImageImport = true }) {
                     Text("📷")
                         .font(Wire.Font.header)

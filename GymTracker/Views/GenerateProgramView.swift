@@ -236,10 +236,22 @@ struct GenerateProgramView: View {
 
     private func generate() {
         Wire.success()
-        let template = ProgramGenerator.generate(
+
+        // Insert exercises into context BEFORE creating the template
+        // WorkoutTemplate.exercises is a stored [Exercise] array, not a @Relationship.
+        // SwiftData requires all @Model objects to be registered in a context before save.
+        for exercise in exercises {
+            let rx = ProgramGenerator.prescribe(exercise: exercise, style: style)
+            exercise.targetSets = rx.sets
+            exercise.targetReps = rx.repMax
+            exercise.restSeconds = rx.restSeconds
+            modelContext.insert(exercise)
+        }
+
+        let template = WorkoutTemplate(
             name: templateName,
-            exercises: exercises,
-            style: style
+            dayIndex: 0,
+            exercises: exercises
         )
         modelContext.insert(template)
         try? modelContext.save()
