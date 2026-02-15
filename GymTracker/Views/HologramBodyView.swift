@@ -11,6 +11,7 @@ struct HologramBodyView: UIViewRepresentable {
         scnView.backgroundColor = .black
         scnView.allowsCameraControl = true
         scnView.antialiasingMode = .multisampling4X
+        scnView.autoenablesDefaultLighting = true
         scnView.scene = HologramBodyBuilder.buildScene(muscleVolumes: muscleVolumes)
         return scnView
     }
@@ -175,8 +176,12 @@ enum HologramBodyBuilder {
         mat.lightingModel = .constant
         mat.isDoubleSided = true
 
-        let glow = 0.1 + intensity * 0.9
-        mat.emission.contents = baseColor.withAlphaComponent(CGFloat(glow))
+        // Scale RGB brightness, NOT alpha — semi-transparent lines are invisible on black
+        let glow = CGFloat(0.15 + intensity * 0.85)
+        let r: CGFloat = 0.0 * glow
+        let g: CGFloat = 0.85 * glow
+        let b: CGFloat = 1.0 * glow
+        mat.emission.contents = UIColor(red: r, green: g, blue: b, alpha: 1.0)
         mat.diffuse.contents = UIColor.clear
 
         return mat
@@ -190,6 +195,9 @@ enum HologramBodyBuilder {
 
     private static func capsule(name: String, w: CGFloat, h: CGFloat, pos: SCNVector3) -> SCNNode {
         let geo = SCNCapsule(capRadius: w, height: h)
+        geo.radialSegmentCount = 12
+        geo.heightSegmentCount = 4
+        geo.capSegmentCount = 6
         let node = SCNNode(geometry: geo)
         node.name = name
         node.position = pos
@@ -198,6 +206,9 @@ enum HologramBodyBuilder {
 
     private static func box(name: String, w: CGFloat, h: CGFloat, d: CGFloat, pos: SCNVector3) -> SCNNode {
         let geo = SCNBox(width: w, height: h, length: d, chamferRadius: 0)
+        geo.widthSegmentCount = 3
+        geo.heightSegmentCount = 4
+        geo.lengthSegmentCount = 2
         let node = SCNNode(geometry: geo)
         node.name = name
         node.position = pos
@@ -206,6 +217,8 @@ enum HologramBodyBuilder {
 
     private static func cylinder(name: String, r: CGFloat, h: CGFloat, pos: SCNVector3) -> SCNNode {
         let geo = SCNCylinder(radius: r, height: h)
+        geo.radialSegmentCount = 12
+        geo.heightSegmentCount = 3
         let node = SCNNode(geometry: geo)
         node.name = name
         node.position = pos
@@ -214,6 +227,7 @@ enum HologramBodyBuilder {
 
     private static func sphere(name: String, r: CGFloat, pos: SCNVector3) -> SCNNode {
         let geo = SCNSphere(radius: r)
+        geo.segmentCount = 12
         let node = SCNNode(geometry: geo)
         node.name = name
         node.position = pos

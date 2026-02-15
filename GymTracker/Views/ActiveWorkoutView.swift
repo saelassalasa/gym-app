@@ -13,6 +13,7 @@ struct ActiveWorkoutView: View {
     @State private var showWarmup = false
     @State private var showAbortAlert = false
     @State private var showSummary = false
+    @State private var showExtraSetInput = false
 
     init(manager: WorkoutManager) {
         _manager = State(initialValue: manager)
@@ -86,6 +87,9 @@ struct ActiveWorkoutView: View {
                     .font(Wire.Font.body)
                     .foregroundColor(Wire.Color.white)
             }
+        }
+        .onChange(of: manager.currentExerciseIndex) {
+            showExtraSetInput = false
         }
     }
     
@@ -275,8 +279,54 @@ struct ActiveWorkoutView: View {
     }
     
     // MARK: - Input Section
-    
+
+    private var currentExerciseDone: Bool {
+        guard let exercise = manager.currentExercise else { return false }
+        let completed = manager.setsForCurrentExercise.filter { $0.isCompleted && !$0.isSkipped }.count
+        return completed >= exercise.targetSets
+    }
+
+    private var isLastExercise: Bool {
+        manager.currentExerciseIndex >= manager.exerciseCount - 1
+    }
+
     private var inputSection: some View {
+        VStack(spacing: Wire.Layout.gap) {
+            if currentExerciseDone && !showExtraSetInput {
+                exerciseDonePrompt
+            } else {
+                exerciseInputFields
+            }
+        }
+    }
+
+    private var exerciseDonePrompt: some View {
+        VStack(spacing: Wire.Layout.gap) {
+            if isLastExercise {
+                WireButton("FINISH WORKOUT", inverted: true) {
+                    manager.finishWorkout()
+                    showSummary = true
+                }
+            } else {
+                WireButton("NEXT EXERCISE  \u{25B6}", inverted: true) {
+                    manager.nextExercise()
+                }
+            }
+
+            // Secondary: allow bonus sets
+            Button(action: { showExtraSetInput = true }) {
+                Text("[ + EXTRA SET ]")
+                    .font(Wire.Font.caption)
+                    .foregroundColor(Wire.Color.gray)
+                    .kerning(1)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 10)
+                    .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
+            }
+        }
+    }
+
+    private var exerciseInputFields: some View {
         VStack(spacing: Wire.Layout.gap) {
             HStack {
                 Text("SET \(manager.nextSetNumber)")
@@ -285,17 +335,15 @@ struct ActiveWorkoutView: View {
                     .kerning(2)
                 Spacer()
             }
-            
+
             HStack(spacing: Wire.Layout.gap) {
                 WireNumField(label: "Weight", value: $manager.weightInput, suffix: "kg")
                 WireStepper(label: "Reps", value: $manager.repsInput, range: 1...30)
             }
-            
+
             WireStepper(label: "RPE", value: $manager.rpeInput, range: 1...10)
-            
-            // LOG + SKIP buttons
+
             HStack(spacing: Wire.Layout.gap) {
-                // SKIP BUTTON - Hollow, cautionary style
                 Button(action: {
                     Wire.tap()
                     manager.skipSet()
@@ -310,8 +358,7 @@ struct ActiveWorkoutView: View {
                         .background(Wire.Color.black)
                         .overlay(Rectangle().stroke(Wire.Color.gray, lineWidth: Wire.Layout.border))
                 }
-                
-                // LOG SET BUTTON
+
                 WireButton("LOG SET", inverted: true) {
                     manager.logSet()
                     hideKeyboard()
