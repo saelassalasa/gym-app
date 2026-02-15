@@ -362,10 +362,7 @@ struct DashboardView: View {
     
     private func deleteProgram(_ program: WorkoutProgram) {
         Wire.heavy()
-        // Delete all templates in this program first
-        for template in (program.templates ?? []) {
-            modelContext.delete(template)
-        }
+        // Cascade delete rule handles templates automatically
         modelContext.delete(program)
         try? modelContext.save()
     }
