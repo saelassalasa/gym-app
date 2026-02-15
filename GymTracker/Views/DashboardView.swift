@@ -350,6 +350,10 @@ struct DashboardView: View {
     
     private func deleteTemplate(_ template: WorkoutTemplate) {
         Wire.heavy()
+        // Nullify session references before deleting
+        for session in completedSessions where session.template?.id == template.id {
+            session.template = nil
+        }
         modelContext.delete(template)
         try? modelContext.save()
         templateToDelete = nil
@@ -366,7 +370,14 @@ struct DashboardView: View {
     
     private func deleteProgram(_ program: WorkoutProgram) {
         Wire.heavy()
-        // Cascade delete rule handles templates automatically
+        // Nullify session references BEFORE cascade deletes the templates,
+        // otherwise sessions hold dangling refs to invalidated objects.
+        let templateIDs = Set((program.templates ?? []).map(\.id))
+        for session in completedSessions where session.template != nil {
+            if templateIDs.contains(session.template!.id) {
+                session.template = nil
+            }
+        }
         modelContext.delete(program)
         try? modelContext.save()
     }
@@ -389,32 +400,34 @@ struct DashboardView: View {
     /// PERPETUAL GRIND: Always show the next workout in rotation
     /// Uses program-based cycling: Day 1 → Day 2 → ... → Day N → Day 1
     private var nextTemplate: WorkoutTemplate? {
+        // Safely resolve last completed template (may be nil if template was deleted)
+        let lastTemplate = completedSessions.first?.template
+
         // Try program-based templates first
         if let program = activeProgram {
             let orderedTemplates = program.orderedTemplates
             guard !orderedTemplates.isEmpty else { return nil }
-            
-            guard let lastCompleted = completedSessions.first,
-                  let lastTemplate = lastCompleted.template else {
-                return orderedTemplates.first  // Start with Day 1
+
+            guard let last = lastTemplate,
+                  !last.isDeleted else {
+                return orderedTemplates.first
             }
-            
-            // Use program's cycling extension
-            return program.nextTemplate(after: lastTemplate)
+
+            return program.nextTemplate(after: last)
         }
-        
+
         // Fallback: legacy template cycling
         guard !templates.isEmpty else { return nil }
-        
-        guard let lastCompleted = completedSessions.first,
-              let lastTemplate = lastCompleted.template else {
+
+        guard let last = lastTemplate,
+              !last.isDeleted else {
             return templates.first
         }
-        
-        guard let lastIndex = templates.firstIndex(where: { $0.id == lastTemplate.id }) else {
+
+        guard let lastIndex = templates.firstIndex(where: { $0.id == last.id }) else {
             return templates.first
         }
-        
+
         let nextIndex = (lastIndex + 1) % templates.count
         return templates[nextIndex]
     }
