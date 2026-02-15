@@ -16,6 +16,7 @@
 		48BBB51A8CCCFEF7611D0C49 /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C705B2D279A164E20B74ABC /* CalendarManager.swift */; };
 		5BD0EB6FF93B25522BE2C236 /* GymTrackerApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4F2B9FA15BF2FBEE9E176EE1 /* GymTrackerApp.swift */; };
 		5F0A32D8524961F31D3CCEC4 /* PlanView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0FECFC5FE68AF1F80CFBAF6B /* PlanView.swift */; };
+		67AB54773B0C2ADEDF08B76D /* ProgramGeneratorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 428233DF3EF73C436B298F73 /* ProgramGeneratorTests.swift */; };
 		6B35899F14BF897B92173B47 /* ProgressionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B7835BE743480E58797DFC1E /* ProgressionManager.swift */; };
 		71773184E0C1BDB780A04D5C /* RecoveryDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 107FADBD87A0261156E9107B /* RecoveryDashboardView.swift */; };
 		738F7E5564E4319FFD54C062 /* BrutalistTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = E43EA7CB696777B1FE16A150 /* BrutalistTheme.swift */; };
@@ -35,6 +36,16 @@
 		F776CF32F2434B0F124D4F7E /* ProgramGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 279BA7FBC70718ED2F1EC8D1 /* ProgramGenerator.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		15AAE482DD23996D6A7628EC /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D4F62015D3CA5352D721B5FA /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 16365F8F2EFBD8421A13608D;
+			remoteInfo = GymTracker;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
 		05129DC960C1BCD5263724E3 /* WarmupGeneratorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarmupGeneratorView.swift; sourceTree = "<group>"; };
 		0CF619E7112DB6C68C18793A /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
@@ -48,6 +59,7 @@
 		2306CBC2525E1DCB990B8273 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		279BA7FBC70718ED2F1EC8D1 /* ProgramGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramGenerator.swift; sourceTree = "<group>"; };
 		385A7AC424B8EE7DE3733999 /* WorkoutManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutManager.swift; sourceTree = "<group>"; };
+		428233DF3EF73C436B298F73 /* ProgramGeneratorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramGeneratorTests.swift; sourceTree = "<group>"; };
 		4F2B9FA15BF2FBEE9E176EE1 /* GymTrackerApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GymTrackerApp.swift; sourceTree = "<group>"; };
 		5C705B2D279A164E20B74ABC /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
 		62BB58EF62B4EF051CF9B1C1 /* PlateCalculatorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlateCalculatorView.swift; sourceTree = "<group>"; };
@@ -60,6 +72,7 @@
 		B7835BE743480E58797DFC1E /* ProgressionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressionManager.swift; sourceTree = "<group>"; };
 		BE76A9D1287FD6E5CD3AF5E7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		BE9B628AFEFE748AA0DF019B /* GeminiService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GeminiService.swift; sourceTree = "<group>"; };
+		CF205FC705C0D47F033C8C30 /* GymTrackerTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = GymTrackerTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DC1871744E96083B4E91804B /* ProgramSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgramSetupView.swift; sourceTree = "<group>"; };
 		DCE0376DC069391EFFCE1032 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		E43EA7CB696777B1FE16A150 /* BrutalistTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BrutalistTheme.swift; sourceTree = "<group>"; };
@@ -67,6 +80,14 @@
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		13E7B4920E297C6A15FFACDF /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				428233DF3EF73C436B298F73 /* ProgramGeneratorTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
 		4BCC9C778E827FC0DADF8EA7 /* Views */ = {
 			isa = PBXGroup;
 			children = (
@@ -101,6 +122,7 @@
 			isa = PBXGroup;
 			children = (
 				6F088548B9C526C109BE717C /* GymTracker.app */,
+				CF205FC705C0D47F033C8C30 /* GymTrackerTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -142,6 +164,7 @@
 				BE76A9D1287FD6E5CD3AF5E7 /* Info.plist */,
 				809E23FF8E3B5D86AA6CFA28 /* Models */,
 				B82C42E32F877763ACF95085 /* Services */,
+				13E7B4920E297C6A15FFACDF /* Tests */,
 				51B5C359BD2E64A733307D4C /* Utilities */,
 				ADFDCF543A00D4874E62ECF0 /* ViewModels */,
 				4BCC9C778E827FC0DADF8EA7 /* Views */,
@@ -170,6 +193,24 @@
 			productReference = 6F088548B9C526C109BE717C /* GymTracker.app */;
 			productType = "com.apple.product-type.application";
 		};
+		5E543FEC85A7F83C64444DFA /* GymTrackerTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A681BCC64DF4F604FF4761BC /* Build configuration list for PBXNativeTarget "GymTrackerTests" */;
+			buildPhases = (
+				8CE969DF09BCF06593708E22 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				4FEF827F708CA75CF5A6BB1A /* PBXTargetDependency */,
+			);
+			name = GymTrackerTests;
+			packageProductDependencies = (
+			);
+			productName = GymTrackerTests;
+			productReference = CF205FC705C0D47F033C8C30 /* GymTrackerTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -180,6 +221,10 @@
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 					16365F8F2EFBD8421A13608D = {
+						DevelopmentTeam = AD5DUJ7D8K;
+						ProvisioningStyle = Automatic;
+					};
+					5E543FEC85A7F83C64444DFA = {
 						DevelopmentTeam = AD5DUJ7D8K;
 						ProvisioningStyle = Automatic;
 					};
@@ -200,6 +245,7 @@
 			projectRoot = "";
 			targets = (
 				16365F8F2EFBD8421A13608D /* GymTracker */,
+				5E543FEC85A7F83C64444DFA /* GymTrackerTests */,
 			);
 		};
 /* End PBXProject section */
@@ -248,7 +294,23 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8CE969DF09BCF06593708E22 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67AB54773B0C2ADEDF08B76D /* ProgramGeneratorTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		4FEF827F708CA75CF5A6BB1A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 16365F8F2EFBD8421A13608D /* GymTracker */;
+			targetProxy = 15AAE482DD23996D6A7628EC /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		0939BF0900B85379E4A13D40 /* Debug */ = {
@@ -265,6 +327,40 @@
 				PRODUCT_BUNDLE_IDENTIFIER = saelassasolutions.GymTracker;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		1B38868273366A08BAD838B6 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.brutalist.GymTrackerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GymTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GymTracker";
+			};
+			name = Release;
+		};
+		50E7753D0726338E7D6DBD85 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.brutalist.GymTrackerTests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/GymTracker.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/GymTracker";
 			};
 			name = Debug;
 		};
@@ -429,6 +525,15 @@
 			buildConfigurations = (
 				7ACB894ACAD8476B37435B2C /* Debug */,
 				9A2684FD6140ABB8821D51CF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		A681BCC64DF4F604FF4761BC /* Build configuration list for PBXNativeTarget "GymTrackerTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				50E7753D0726338E7D6DBD85 /* Debug */,
+				1B38868273366A08BAD838B6 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
