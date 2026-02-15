@@ -7,7 +7,9 @@ import SwiftData
 // ═══════════════════════════════════════════════════════════════════════════
 
 struct WorkoutDetailView: View {
+    @Environment(\.modelContext) private var modelContext
     let session: WorkoutSession
+    @State private var prMap: [UUID: Set<PRType>] = [:]
     
     // Group sets by exercise
     private var exerciseGroups: [(exercise: Exercise, sets: [WorkoutSet])] {
@@ -66,6 +68,9 @@ struct WorkoutDetailView: View {
             }
         }
         .navigationBarTitleDisplayMode(.inline)
+        .task {
+            prMap = PRService.detectPRsForSession(session, context: modelContext)
+        }
     }
     
     // MARK: - Header
@@ -196,12 +201,33 @@ struct WorkoutDetailView: View {
                         .font(Wire.Font.caption)
                         .foregroundColor(Wire.Color.gray)
                 }
+
+                // PR Badge
+                if let prs = prMap[set.id] {
+                    Text(prBadgeLabel(prs))
+                        .font(Wire.Font.caption)
+                        .foregroundColor(Wire.Color.black)
+                        .kerning(0.5)
+                        .padding(.horizontal, 4)
+                        .padding(.vertical, 1)
+                        .background(Wire.Color.white)
+                }
             }
         }
         .padding(.vertical, 4)
         .opacity(set.isSkipped ? 0.5 : 1.0)
     }
     
+    // MARK: - PR Badge
+
+    private func prBadgeLabel(_ types: Set<PRType>) -> String {
+        let hasWeight = types.contains(.weight)
+        let hasE1RM = types.contains(.estimated1RM)
+        if hasWeight && hasE1RM { return "PR:WT+1RM" }
+        if hasWeight { return "PR:WT" }
+        return "PR:1RM"
+    }
+
     // MARK: - Formatters
     
     private func formatFullDate(_ date: Date) -> String {

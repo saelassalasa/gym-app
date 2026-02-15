@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-// MARK: - Exercise Category
+// MARK: - Exercise Category (movement pattern)
 enum ExerciseCategory: String, Codable, CaseIterable {
     case push = "PUSH"
     case pull = "PULL"
@@ -11,27 +11,65 @@ enum ExerciseCategory: String, Codable, CaseIterable {
     case other = "OTHER"
 }
 
+// MARK: - Exercise Type (compound vs accessory — drives powerbuilding logic + recovery math)
+enum ExerciseType: String, Codable, CaseIterable {
+    case compound  = "COMPOUND"
+    case accessory = "ACCESSORY"
+}
+
+// MARK: - Muscle Group (anatomy — drives recovery engine)
+enum MuscleGroup: String, Codable, CaseIterable, Identifiable {
+    case chest, back, quads, hamstrings, glutes
+    case shoulders, biceps, triceps
+    case calves, core
+
+    var id: String { rawValue }
+
+    /// Base hours to recover at moderate volume (6 sets), RPE 8, isolation
+    var baseRecoveryHours: Double {
+        switch self {
+        case .quads, .hamstrings, .chest:    return 60
+        case .back, .glutes:                 return 56
+        case .shoulders, .biceps, .triceps:  return 42
+        case .calves, .core:                 return 30
+        }
+    }
+
+    /// Fatigue decay time constant (days) — Banister tau2
+    var fatigueTau: Double {
+        switch self {
+        case .quads, .hamstrings, .chest, .back, .glutes: return 2.5
+        case .shoulders, .biceps, .triceps:                return 1.75
+        case .calves, .core:                               return 1.0
+        }
+    }
+}
+
 // MARK: - Exercise
 @Model
 final class Exercise {
     var id: UUID
     var name: String
     var category: ExerciseCategory
+    var exerciseType: ExerciseType
+    var primaryMuscle: MuscleGroup
     var notes: String
     var restSeconds: Int
-    
+
     // Progression Data
     var currentWeight: Double
     var targetIncrement: Double
     var targetReps: Int
     var targetSets: Int
-    
+
     @Relationship(deleteRule: .cascade, inverse: \WorkoutSet.exercise)
     var sets: [WorkoutSet]?
-    
+
     init(
         name: String,
         category: ExerciseCategory,
+        exerciseType: ExerciseType = .compound,
+        primaryMuscle: MuscleGroup = .chest,
         notes: String = "",
         restSeconds: Int = 120,
         currentWeight: Double = 20.0,
@@ -42,6 +80,8 @@ final class Exercise {
         self.id = UUID()
         self.name = name
         self.category = category
+        self.exerciseType = exerciseType
+        self.primaryMuscle = primaryMuscle
         self.notes = notes
         self.restSeconds = restSeconds
         self.currentWeight = currentWeight

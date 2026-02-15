@@ -19,6 +19,11 @@ final class WorkoutManager {
     var repsInput: Int = 8
     var rpeInput: Int = 7
     
+    // PR Detection
+    var prResults: [UUID: Set<PRType>] = [:]
+    var showPRBanner: Bool = false
+    var lastPRTypes: Set<PRType> = []
+
     // Timer
     var timerValue: Int = 0
     var isTimerActive: Bool = false
@@ -81,10 +86,18 @@ final class WorkoutManager {
     func logSet() {
         guard !isSaving else { return }
         guard weightInput > 0, repsInput > 0, let exercise = currentExercise else { return }
-        
+
         isSaving = true
         defer { isSaving = false }
-        
+
+        // Detect PRs BEFORE inserting the new set
+        let prs = PRService.detectPRs(
+            weight: weightInput,
+            reps: repsInput,
+            exerciseName: exercise.name,
+            context: context
+        )
+
         let newSet = WorkoutSet(
             setNumber: nextSetNumber,
             reps: repsInput,
@@ -92,18 +105,27 @@ final class WorkoutManager {
             rpe: rpeInput,
             isCompleted: true
         )
-        
+
         newSet.exercise = exercise
         newSet.session = session
         context.insert(newSet)
-        
+
         do {
             try context.save()
         } catch {
             print("[ERROR] Save failed: \(error)")
         }
-        
-        Wire.heavy()
+
+        // Store PR results and trigger banner
+        if !prs.isEmpty {
+            prResults[newSet.id] = prs
+            lastPRTypes = prs
+            showPRBanner = true
+            Wire.success()
+        } else {
+            Wire.heavy()
+        }
+
         startTimer(seconds: currentExercise?.restSeconds ?? 120)
     }
     

@@ -40,6 +40,10 @@ struct ActiveWorkoutView: View {
             if manager.isTimerActive {
                 timerOverlay
             }
+
+            if manager.showPRBanner {
+                prBanner
+            }
         }
         .sheet(isPresented: $showPlateCalc) {
             PlateCalculatorView()
@@ -203,7 +207,17 @@ struct ActiveWorkoutView: View {
                         .font(Wire.Font.caption)
                         .foregroundColor(rpe >= 9 ? Wire.Color.danger : Wire.Color.gray)
                 }
-                
+
+                if manager.prResults[set.id] != nil {
+                    Text("PR")
+                        .font(Wire.Font.caption)
+                        .foregroundColor(Wire.Color.black)
+                        .kerning(1)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Wire.Color.white)
+                }
+
                 Text("✓")
                     .font(Wire.Font.body)
                     .foregroundColor(Wire.Color.white)
@@ -211,7 +225,10 @@ struct ActiveWorkoutView: View {
         }
         .padding(8)
         .background(Wire.Color.black)
-        .overlay(Rectangle().stroke(set.isSkipped ? Wire.Color.dark : Wire.Color.dark, lineWidth: Wire.Layout.border))
+        .overlay(Rectangle().stroke(
+            manager.prResults[set.id] != nil ? Wire.Color.white : Wire.Color.dark,
+            lineWidth: Wire.Layout.border
+        ))
         .opacity(set.isSkipped ? 0.6 : 1.0)
     }
     
@@ -319,8 +336,42 @@ struct ActiveWorkoutView: View {
         }
     }
     
+    // MARK: - PR Banner
+
+    private var prBanner: some View {
+        VStack(spacing: 4) {
+            Text("PERSONAL RECORD")
+                .font(Wire.Font.header)
+                .foregroundColor(Wire.Color.black)
+                .kerning(2)
+
+            Text(prLabel(manager.lastPRTypes))
+                .font(Wire.Font.caption)
+                .foregroundColor(Wire.Color.black)
+                .kerning(1)
+        }
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity)
+        .background(Wire.Color.white)
+        .transition(.move(edge: .top).combined(with: .opacity))
+        .allowsHitTesting(false)
+        .frame(maxHeight: .infinity, alignment: .top)
+        .task {
+            try? await Task.sleep(for: .seconds(2))
+            withAnimation { manager.showPRBanner = false }
+        }
+    }
+
+    private func prLabel(_ types: Set<PRType>) -> String {
+        let hasWeight = types.contains(.weight)
+        let hasE1RM = types.contains(.estimated1RM)
+        if hasWeight && hasE1RM { return "WEIGHT + EST 1RM" }
+        if hasWeight { return "WEIGHT" }
+        return "EST 1RM"
+    }
+
     // MARK: - Timer Overlay
-    
+
     private var timerOverlay: some View {
         ZStack {
             Wire.Color.black.opacity(0.95).ignoresSafeArea()

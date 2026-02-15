@@ -69,3 +69,26 @@ Always use `Wire.*` tokens instead of raw SwiftUI values. Border radius is alway
 - **Dev Team:** `AD5DUJ7D8K`
 - **XcodeGen config:** `GymTracker/project.yml`
 - **Portrait only**, calendar permissions required (`NSCalendarsFullAccessUsageDescription`)
+
+## Token Efficiency & Context Management
+
+- **No Chatty Responses:** Be concise. Don't summarize what you just did unless asked. Just say "Updated X" or "Created Y".
+- **Don't Dump Code:** Never output the full file content after editing. Only show relevant diffs or say "Applied changes".
+- **Smart Reading:** Do not read large files (like `GymTracker.xcodeproj` or `Assets.xcassets`) unless absolutely necessary. Use `grep` or `ls` first.
+- **One-Shot Edits:** Try to batch file edits. Don't edit a file, read it again, then edit it again in the same turn.
+
+## iOS & Swift Standards
+
+- **Architecture:** Use MVVM. Logic in ViewModels, UI in Views. Data models are `SwiftData` (@Model).
+- **Concurrency:** Prefer `async/await`.
+- **Charts:** Use Swift Charts framework.
+
+## Workflow
+
+- **Commit Often:** After finishing a logical unit, ask to commit.
+- **Subagents:** If you spawn a subagent, strictly limit its output to <2000 chars.
+
+## Project Logic (The Plan)
+
+- **Philosophy:** "High Intensity / Low Volume" is default.
+- **Recovery:** Use the logarithmic volume/fatigue calculation (SRA curves) as defined in our architecture plan.

@@ -27,6 +27,7 @@ struct DashboardView: View {
     @State private var showTemplateCreator = false
     @State private var showProgramSetup = false
     @State private var showImageImport = false
+    @State private var showGenerator = false
     @State private var activeManager: WorkoutManager?
     @State private var templateToEdit: WorkoutTemplate?
     @State private var templateToDelete: WorkoutTemplate?
@@ -46,11 +47,16 @@ struct DashboardView: View {
                         LazyVStack(spacing: Wire.Layout.gap) {
                             // OPTIMIZATION: Isolated subview to prevent full repaint
                             StatsHeaderView()
-                            
+
+                            // SRA Recovery Strip
+                            NavigationLink(destination: RecoveryDashboardView()) {
+                                RecoveryStripView()
+                            }
+
                             if let next = nextTemplate {
                                 missionCard(next)
                             }
-                            
+
                             templatesSection
                         }
                         .padding(Wire.Layout.pad)
@@ -86,6 +92,9 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showImageImport) {
                 ImageImportView()
+            }
+            .sheet(isPresented: $showGenerator) {
+                GenerateProgramView()
             }
             .navigationDestination(for: WorkoutProgram.self) { program in
                 ProgramDetailView(program: program)
@@ -196,11 +205,17 @@ struct DashboardView: View {
                 
                 Spacer()
                 
+                Button(action: { showGenerator = true }) {
+                    Text("⚡")
+                        .font(Wire.Font.header)
+                        .foregroundColor(Wire.Color.white)
+                }
+
                 Button(action: { showImageImport = true }) {
                     Text("📷")
                         .font(Wire.Font.header)
                 }
-                
+
                 Button(action: { showProgramSetup = true }) {
                     Text("+")
                         .font(Wire.Font.header)
