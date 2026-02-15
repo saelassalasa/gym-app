@@ -43,40 +43,28 @@ enum HologramBodyBuilder {
 
     static func buildScene(muscleVolumes: [MuscleGroup: Double]) -> SCNScene {
         let scene = SCNScene()
+        scene.background.contents = UIColor.black
 
         // Camera — centered on body midpoint
         let cameraNode = SCNNode()
         cameraNode.camera = SCNCamera()
-        cameraNode.camera?.usesOrthographicProjection = false
         cameraNode.camera?.fieldOfView = 36
+        // Bloom approximation via HDR + bloom threshold
+        cameraNode.camera?.wantsHDR = true
+        cameraNode.camera?.bloomIntensity = 0.8
+        cameraNode.camera?.bloomThreshold = 0.4
+        cameraNode.camera?.bloomBlurRadius = 12.0
         cameraNode.position = SCNVector3(0, 0.45, 2.4)
         cameraNode.look(at: SCNVector3(0, 0.45, 0))
         scene.rootNode.addChildNode(cameraNode)
 
-        // Ambient — subtle blue fill
-        let ambient = SCNNode()
-        ambient.light = SCNLight()
-        ambient.light?.type = .ambient
-        ambient.light?.color = UIColor(red: 0.0, green: 0.2, blue: 0.4, alpha: 1.0)
-        ambient.light?.intensity = 500
-        scene.rootNode.addChildNode(ambient)
-
-        // Directional — top-down for depth
-        let directional = SCNNode()
-        directional.light = SCNLight()
-        directional.light?.type = .directional
-        directional.light?.color = UIColor(red: 0.0, green: 0.6, blue: 1.0, alpha: 1.0)
-        directional.light?.intensity = 600
-        directional.eulerAngles = SCNVector3(-Float.pi / 3, Float.pi / 6, 0)
-        scene.rootNode.addChildNode(directional)
+        // No scene lights needed — constant lighting uses emission only
 
         // Build body
         let body = buildBody()
         scene.rootNode.addChildNode(body)
 
-        // Apply initial intensities
         updateIntensities(scene: scene, muscleVolumes: muscleVolumes)
-
         return scene
     }
 
@@ -86,44 +74,48 @@ enum HologramBodyBuilder {
         let root = SCNNode()
 
         // Head
-        root.addChildNode(capsule(name: "head", w: 0.12, h: 0.16, pos: v3(0, 1.05, 0)))
+        root.addChildNode(capsule(name: "head", w: 0.11, h: 0.15, pos: v3(0, 1.05, 0)))
         // Neck
-        root.addChildNode(cylinder(name: "neck", r: 0.04, h: 0.08, pos: v3(0, 0.93, 0)))
+        root.addChildNode(cylinder(name: "neck", r: 0.035, h: 0.08, pos: v3(0, 0.93, 0)))
 
         // Chest
-        root.addChildNode(box(name: "chest_L", w: 0.15, h: 0.18, d: 0.1, pos: v3(-0.08, 0.75, 0.02)))
-        root.addChildNode(box(name: "chest_R", w: 0.15, h: 0.18, d: 0.1, pos: v3(0.08, 0.75, 0.02)))
+        root.addChildNode(box(name: "chest_L", w: 0.14, h: 0.17, d: 0.09, pos: v3(-0.075, 0.75, 0.02)))
+        root.addChildNode(box(name: "chest_R", w: 0.14, h: 0.17, d: 0.09, pos: v3(0.075, 0.75, 0.02)))
 
         // Core
-        root.addChildNode(box(name: "core_front", w: 0.24, h: 0.2, d: 0.08, pos: v3(0, 0.52, 0.02)))
+        root.addChildNode(box(name: "core_front", w: 0.22, h: 0.18, d: 0.07, pos: v3(0, 0.53, 0.02)))
 
         // Back
-        root.addChildNode(box(name: "back_upper", w: 0.28, h: 0.18, d: 0.08, pos: v3(0, 0.75, -0.06)))
-        root.addChildNode(box(name: "back_lower", w: 0.24, h: 0.15, d: 0.08, pos: v3(0, 0.52, -0.06)))
+        root.addChildNode(box(name: "back_upper", w: 0.26, h: 0.17, d: 0.07, pos: v3(0, 0.75, -0.05)))
+        root.addChildNode(box(name: "back_lower", w: 0.22, h: 0.14, d: 0.07, pos: v3(0, 0.53, -0.05)))
 
         // Shoulders
-        root.addChildNode(sphere(name: "shoulder_L", r: 0.07, pos: v3(-0.22, 0.85, 0)))
-        root.addChildNode(sphere(name: "shoulder_R", r: 0.07, pos: v3(0.22, 0.85, 0)))
+        root.addChildNode(sphere(name: "shoulder_L", r: 0.065, pos: v3(-0.21, 0.86, 0)))
+        root.addChildNode(sphere(name: "shoulder_R", r: 0.065, pos: v3(0.21, 0.86, 0)))
 
         // Biceps / Triceps
-        root.addChildNode(capsule(name: "bicep_L", w: 0.05, h: 0.2, pos: v3(-0.25, 0.68, 0.02)))
-        root.addChildNode(capsule(name: "bicep_R", w: 0.05, h: 0.2, pos: v3(0.25, 0.68, 0.02)))
-        root.addChildNode(capsule(name: "tricep_L", w: 0.045, h: 0.2, pos: v3(-0.25, 0.68, -0.02)))
-        root.addChildNode(capsule(name: "tricep_R", w: 0.045, h: 0.2, pos: v3(0.25, 0.68, -0.02)))
+        root.addChildNode(capsule(name: "bicep_L", w: 0.04, h: 0.18, pos: v3(-0.24, 0.68, 0.015)))
+        root.addChildNode(capsule(name: "bicep_R", w: 0.04, h: 0.18, pos: v3(0.24, 0.68, 0.015)))
+        root.addChildNode(capsule(name: "tricep_L", w: 0.038, h: 0.18, pos: v3(-0.24, 0.68, -0.015)))
+        root.addChildNode(capsule(name: "tricep_R", w: 0.038, h: 0.18, pos: v3(0.24, 0.68, -0.015)))
+
+        // Forearms (visual only, mapped to biceps for simplicity)
+        root.addChildNode(capsule(name: "forearm_L", w: 0.03, h: 0.16, pos: v3(-0.24, 0.50, 0)))
+        root.addChildNode(capsule(name: "forearm_R", w: 0.03, h: 0.16, pos: v3(0.24, 0.50, 0)))
 
         // Quads / Hamstrings
-        root.addChildNode(capsule(name: "quad_L", w: 0.08, h: 0.3, pos: v3(-0.1, 0.22, 0.02)))
-        root.addChildNode(capsule(name: "quad_R", w: 0.08, h: 0.3, pos: v3(0.1, 0.22, 0.02)))
-        root.addChildNode(capsule(name: "ham_L", w: 0.07, h: 0.28, pos: v3(-0.1, 0.22, -0.02)))
-        root.addChildNode(capsule(name: "ham_R", w: 0.07, h: 0.28, pos: v3(0.1, 0.22, -0.02)))
+        root.addChildNode(capsule(name: "quad_L", w: 0.07, h: 0.28, pos: v3(-0.09, 0.22, 0.015)))
+        root.addChildNode(capsule(name: "quad_R", w: 0.07, h: 0.28, pos: v3(0.09, 0.22, 0.015)))
+        root.addChildNode(capsule(name: "ham_L", w: 0.065, h: 0.26, pos: v3(-0.09, 0.22, -0.015)))
+        root.addChildNode(capsule(name: "ham_R", w: 0.065, h: 0.26, pos: v3(0.09, 0.22, -0.015)))
 
         // Glutes
-        root.addChildNode(sphere(name: "glute_L", r: 0.08, pos: v3(-0.09, 0.38, -0.04)))
-        root.addChildNode(sphere(name: "glute_R", r: 0.08, pos: v3(0.09, 0.38, -0.04)))
+        root.addChildNode(sphere(name: "glute_L", r: 0.075, pos: v3(-0.085, 0.38, -0.035)))
+        root.addChildNode(sphere(name: "glute_R", r: 0.075, pos: v3(0.085, 0.38, -0.035)))
 
         // Calves
-        root.addChildNode(capsule(name: "calf_L", w: 0.05, h: 0.25, pos: v3(-0.1, -0.1, -0.01)))
-        root.addChildNode(capsule(name: "calf_R", w: 0.05, h: 0.25, pos: v3(0.1, -0.1, -0.01)))
+        root.addChildNode(capsule(name: "calf_L", w: 0.04, h: 0.22, pos: v3(-0.09, -0.08, 0)))
+        root.addChildNode(capsule(name: "calf_R", w: 0.04, h: 0.22, pos: v3(0.09, -0.08, 0)))
 
         return root
     }
@@ -138,35 +130,43 @@ enum HologramBodyBuilder {
                 node.geometry?.firstMaterial = hologramMaterial(intensity: intensity)
             }
         }
-        for name in ["head", "neck"] {
+        // Non-mapped structural nodes
+        for name in ["head", "neck", "forearm_L", "forearm_R"] {
             guard let node = scene.rootNode.childNode(withName: name, recursively: true) else { continue }
             node.geometry?.firstMaterial = hologramMaterial(intensity: 0)
         }
     }
 
-    // MARK: - Holographic Material (translucent ghost fill)
+    // MARK: - Holographic Material (phantom projection)
 
     private static func hologramMaterial(intensity: Double) -> SCNMaterial {
         let mat = SCNMaterial()
-        mat.lightingModel = .physicallyBased
+        mat.lightingModel = .constant   // Emission only — no scene lights
         mat.isDoubleSided = true
-        mat.blendMode = .add // Additive blending for glow-through effect
-        mat.writesToDepthBuffer = false // Prevents z-fighting, shows all layers
+        mat.blendMode = .add            // Additive = glow through overlapping parts
+        mat.writesToDepthBuffer = false  // All layers visible (X-ray effect)
 
-        // Dim base for non-worked muscles, bright cyan for activated
-        let base = 0.08 + intensity * 0.25
-        let emGlow = 0.05 + intensity * 0.95
-
-        mat.diffuse.contents = UIColor(red: 0, green: CGFloat(base * 0.8), blue: CGFloat(base), alpha: 1.0)
-        mat.metalness.contents = NSNumber(value: 0.8)
-        mat.roughness.contents = NSNumber(value: 0.3)
-        mat.emission.contents = UIColor(
-            red: 0,
-            green: CGFloat(emGlow * 0.85),
-            blue: CGFloat(emGlow),
-            alpha: 1.0
-        )
-        mat.transparent.contents = UIColor(white: 0, alpha: CGFloat(0.15 + intensity * 0.45))
+        if intensity > 0.01 {
+            // ACTIVE: Neon cyan glow, intensity drives brightness
+            let g = CGFloat(0.3 + intensity * 0.7)
+            mat.emission.contents = UIColor(
+                red: 0,
+                green: g * 0.9,
+                blue: g,
+                alpha: 1.0
+            )
+            // Slight transparency so overlapping parts compound
+            mat.transparent.contents = UIColor(white: 1.0, alpha: CGFloat(0.25 + intensity * 0.55))
+        } else {
+            // INACTIVE: Dark ghost outline — barely visible
+            mat.emission.contents = UIColor(
+                red: 0,
+                green: 0.08,
+                blue: 0.15,
+                alpha: 1.0
+            )
+            mat.transparent.contents = UIColor(white: 1.0, alpha: 0.12)
+        }
 
         return mat
     }
@@ -180,7 +180,7 @@ enum HologramBodyBuilder {
     private static func capsule(name: String, w: CGFloat, h: CGFloat, pos: SCNVector3) -> SCNNode {
         let geo = SCNCapsule(capRadius: w, height: h)
         geo.radialSegmentCount = 24
-        geo.heightSegmentCount = 2
+        geo.heightSegmentCount = 1
         geo.capSegmentCount = 12
         let node = SCNNode(geometry: geo)
         node.name = name
@@ -189,7 +189,7 @@ enum HologramBodyBuilder {
     }
 
     private static func box(name: String, w: CGFloat, h: CGFloat, d: CGFloat, pos: SCNVector3) -> SCNNode {
-        let geo = SCNBox(width: w, height: h, length: d, chamferRadius: 0.005)
+        let geo = SCNBox(width: w, height: h, length: d, chamferRadius: 0.008)
         let node = SCNNode(geometry: geo)
         node.name = name
         node.position = pos

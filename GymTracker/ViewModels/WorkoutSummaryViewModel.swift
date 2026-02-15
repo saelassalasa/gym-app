@@ -133,12 +133,48 @@ final class WorkoutSummaryViewModel {
         var raw: [MuscleGroup: Double] = [:]
         for s in sets {
             guard let ex = s.exercise else { continue }
-            let muscle = ex.resolvedPrimaryMuscle
-            raw[muscle, default: 0] += Double(s.reps) * s.weight
+            let vol = Double(s.reps) * s.weight
+            let contributions = Self.muscleContributions(for: ex)
+            for (muscle, factor) in contributions {
+                raw[muscle, default: 0] += vol * factor
+            }
         }
         let maxVol = raw.values.max() ?? 1.0
         guard maxVol > 0 else { return }
         muscleVolumes = raw.mapValues { $0 / maxVol }
+    }
+
+    /// Returns primary + secondary muscle contributions for an exercise.
+    /// Compounds spread load to synergists; isolations hit primary only.
+    private static func muscleContributions(for exercise: Exercise) -> [(MuscleGroup, Double)] {
+        let primary = exercise.resolvedPrimaryMuscle
+        let isCompound = exercise.resolvedExerciseType == .compound
+
+        // Secondary muscle map for compounds, keyed by category + primary
+        if isCompound {
+            switch exercise.category {
+            case .push:
+                // Push compounds recruit chest, shoulders, triceps
+                let secondaries: [MuscleGroup] = [.chest, .shoulders, .triceps]
+                    .filter { $0 != primary }
+                return [(primary, 1.0)] + secondaries.map { ($0, 0.4) }
+            case .pull:
+                // Pull compounds recruit back, biceps
+                let secondaries: [MuscleGroup] = [.back, .biceps]
+                    .filter { $0 != primary }
+                return [(primary, 1.0)] + secondaries.map { ($0, 0.4) }
+            case .legs:
+                // Leg compounds recruit quads, hamstrings, glutes
+                let secondaries: [MuscleGroup] = [.quads, .hamstrings, .glutes]
+                    .filter { $0 != primary }
+                return [(primary, 1.0)] + secondaries.map { ($0, 0.35) }
+            default:
+                return [(primary, 1.0)]
+            }
+        }
+
+        // Isolation: primary only
+        return [(primary, 1.0)]
     }
 
     // MARK: - PR Summaries
