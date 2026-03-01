@@ -24,7 +24,10 @@ struct GymTrackerApp: App {
         WindowGroup {
             MainTabView()
                 .preferredColorScheme(.dark)
-                .onAppear { seedIfNeeded() }
+                .onAppear {
+                    seedIfNeeded()
+                    cleanOrphanSessions()
+                }
         }
         .modelContainer(sharedModelContainer)
     }
@@ -73,6 +76,22 @@ struct GymTrackerApp: App {
         context.insert(pullB)
         context.insert(pullTemplate)
         try? context.save()
+    }
+
+    @MainActor
+    private func cleanOrphanSessions() {
+        let context = sharedModelContainer.mainContext
+        let descriptor = FetchDescriptor<WorkoutSession>(
+            predicate: #Predicate<WorkoutSession> { !$0.isCompleted }
+        )
+        guard let orphans = try? context.fetch(descriptor), !orphans.isEmpty else { return }
+        for session in orphans {
+            session.isCompleted = true
+            session.duration = 0
+            session.notes = "[RECOVERED]"
+        }
+        try? context.save()
+        debugLog("Cleaned \(orphans.count) orphan session(s)")
     }
 }
 
