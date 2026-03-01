@@ -446,7 +446,7 @@ struct DashboardView: View {
 // ═══════════════════════════════════════════════════════════════════════════
 
 struct StatsHeaderView: View {
-    @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
+    @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted }, sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     
     // OPTIMIZATION: Cached stats computed in background
     @State private var totalCount: Int = 0
