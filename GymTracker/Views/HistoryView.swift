@@ -297,10 +297,14 @@ struct SetEditorRow: View {
                 .frame(width: 60)
                 .padding(6)
                 .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
-            
+                .onChange(of: set.weight) { _, new in
+                    if !new.isFinite || new < 0 { set.weight = 0 }
+                    if new > 1000 { set.weight = 1000 }
+                }
+
             Text("×")
                 .foregroundColor(Wire.Color.gray)
-            
+
             // Reps
             TextField("", value: $set.reps, format: .number)
                 .font(Wire.Font.sub)
@@ -309,6 +313,10 @@ struct SetEditorRow: View {
                 .frame(width: 40)
                 .padding(6)
                 .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
+                .onChange(of: set.reps) { _, new in
+                    if new < 0 { set.reps = 0 }
+                    if new > 100 { set.reps = 100 }
+                }
             
             Spacer()
             
