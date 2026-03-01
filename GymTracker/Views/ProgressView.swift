@@ -12,17 +12,11 @@ struct ProgressView: View {
     @Query(sort: \WorkoutSession.date, order: .forward) private var sessions: [WorkoutSession]
     @State private var selectedName: String?
     @State private var chartMode: ChartMode = .weight
+    @State private var cachedNames: [String] = []
+    @State private var cachedDataPoints: [DataPoint] = []
 
     enum ChartMode {
         case weight, volume, e1rm
-    }
-
-    /// Unique exercise names, case-insensitive deduped, sorted alphabetically
-    private var uniqueNames: [String] {
-        let grouped = Dictionary(grouping: exercises, by: { $0.name.lowercased() })
-        return grouped.keys
-            .compactMap { key in grouped[key]?.first?.name }
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
     }
 
     var body: some View {
@@ -36,11 +30,10 @@ struct ProgressView: View {
                     VStack(spacing: Wire.Layout.gap) {
                         selector
 
-                        if let name = selectedName {
-                            let data = getDataPoints(forExerciseName: name)
-                            summaryStats(data: data)
+                        if selectedName != nil {
+                            summaryStats(data: cachedDataPoints)
                             chartPicker
-                            chartView(data: data)
+                            chartView(data: cachedDataPoints)
                         } else {
                             emptyState
                         }
@@ -53,7 +46,15 @@ struct ProgressView: View {
             }
         }
         .onAppear {
-            if selectedName == nil { selectedName = uniqueNames.first }
+            updateNames()
+            if selectedName == nil { selectedName = cachedNames.first }
+            updateDataPoints()
+        }
+        .onChange(of: exercises.count) {
+            updateNames()
+        }
+        .onChange(of: selectedName) {
+            updateDataPoints()
         }
     }
 
@@ -75,7 +76,7 @@ struct ProgressView: View {
 
     private var selector: some View {
         Menu {
-            ForEach(uniqueNames, id: \.self) { name in
+            ForEach(cachedNames, id: \.self) { name in
                 Button(name.uppercased()) { selectedName = name }
             }
         } label: {
@@ -221,6 +222,20 @@ struct ProgressView: View {
                 .foregroundColor(Wire.Color.gray)
             Spacer()
         }
+    }
+
+    // MARK: - Cache Helpers
+
+    private func updateNames() {
+        let grouped = Dictionary(grouping: exercises, by: { $0.name.lowercased() })
+        cachedNames = grouped.keys
+            .compactMap { key in grouped[key]?.first?.name }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+    }
+
+    private func updateDataPoints() {
+        guard let name = selectedName else { cachedDataPoints = []; return }
+        cachedDataPoints = getDataPoints(forExerciseName: name)
     }
 
     // MARK: - Data
