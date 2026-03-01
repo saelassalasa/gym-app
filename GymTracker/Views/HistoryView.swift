@@ -20,7 +20,24 @@ struct HistoryView: View {
         f.locale = Locale(identifier: "en_US_POSIX")
         return f
     }()
-    
+
+    private static let sectionDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, dd MMM yyyy"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    private var groupedSessions: [(String, [WorkoutSession])] {
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: sessions) { session in
+            calendar.startOfDay(for: session.date)
+        }
+        return grouped.sorted { $0.key > $1.key }.map { (key, sessions) in
+            (Self.sectionDateFormatter.string(from: key), sessions)
+        }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
@@ -75,35 +92,50 @@ struct HistoryView: View {
     }
     
     private var emptyState: some View {
-        VStack {
+        VStack(spacing: 0) {
             Spacer()
             Text("NO DATA")
                 .font(Wire.Font.header)
                 .foregroundColor(Wire.Color.gray)
                 .kerning(2)
+            Text("Start a workout from the TRAIN tab")
+                .font(Wire.Font.caption)
+                .foregroundColor(Wire.Color.gray)
+                .padding(.top, Wire.Layout.gap)
             Spacer()
         }
     }
     
     private var sessionList: some View {
         ScrollView {
-            LazyVStack(spacing: 4) {
-                ForEach(sessions) { session in
-                    sessionRow(session)
-                        .contextMenu {
-                            Button {
-                                sessionToEdit = session
-                            } label: {
-                                Label("EDIT", systemImage: "pencil")
-                            }
-                            
-                            Button(role: .destructive) {
-                                sessionToDelete = session
-                                showDeleteAlert = true
-                            } label: {
-                                Label("DELETE", systemImage: "trash")
-                            }
+            LazyVStack(spacing: 4, pinnedViews: []) {
+                ForEach(groupedSessions, id: \.0) { (dateString, daySessions) in
+                    Section {
+                        ForEach(daySessions) { session in
+                            sessionRow(session)
+                                .contextMenu {
+                                    Button {
+                                        sessionToEdit = session
+                                    } label: {
+                                        Label("EDIT", systemImage: "pencil")
+                                    }
+
+                                    Button(role: .destructive) {
+                                        sessionToDelete = session
+                                        showDeleteAlert = true
+                                    } label: {
+                                        Label("DELETE", systemImage: "trash")
+                                    }
+                                }
                         }
+                    } header: {
+                        Text(dateString.uppercased())
+                            .font(Wire.Font.caption)
+                            .foregroundColor(Wire.Color.gray)
+                            .kerning(1)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(.top, Wire.Layout.gap)
+                    }
                 }
             }
             .padding(Wire.Layout.pad)
