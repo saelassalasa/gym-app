@@ -10,6 +10,7 @@ struct GymTrackerApp: App {
             WorkoutTemplate.self,
             WorkoutSession.self,
             WorkoutSet.self,
+            BodyMeasurement.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -26,7 +27,18 @@ struct GymTrackerApp: App {
 
             return container
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            // Schema migration failed — delete old store and retry
+            debugLog("⚠️ ModelContainer failed, resetting store: \(error)")
+            let storeURL = modelConfiguration.url
+            for ext in ["", "-wal", "-shm"] {
+                let url = URL(fileURLWithPath: storeURL.path() + ext)
+                try? FileManager.default.removeItem(at: url)
+            }
+            do {
+                return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            } catch {
+                fatalError("Could not create ModelContainer after reset: \(error)")
+            }
         }
     }()
 

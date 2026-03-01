@@ -58,6 +58,11 @@ struct DashboardView: View {
                                 FrequencyStripView()
                             }
 
+                            // Body Measurements
+                            NavigationLink(destination: BodyMeasurementsView()) {
+                                BodyStatsStripView()
+                            }
+
                             if let next = nextTemplate {
                                 missionCard(next)
                             }
@@ -541,5 +546,5 @@ extension WorkoutManager: Identifiable {
 
 #Preview {
     DashboardView()
-        .modelContainer(for: [WorkoutTemplate.self, WorkoutSession.self], inMemory: true)
+        .modelContainer(for: [WorkoutTemplate.self, WorkoutSession.self, BodyMeasurement.self], inMemory: true)
 }

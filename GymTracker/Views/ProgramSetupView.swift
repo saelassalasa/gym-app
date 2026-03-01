@@ -191,14 +191,59 @@ struct ProgramSetupView: View {
     }
     
     private func exerciseRow(_ exercise: Exercise, at index: Int) -> some View {
-        HStack {
+        HStack(spacing: Wire.Layout.gap) {
             Text(exercise.name.uppercased())
                 .font(Wire.Font.body)
                 .foregroundColor(Wire.Color.white)
+                .lineLimit(1)
+
             Spacer()
-            Text("\(Int(exercise.currentWeight))")
-                .font(Wire.Font.body)
+
+            // Inline weight editor
+            HStack(spacing: 0) {
+                Button {
+                    Wire.tap()
+                    let newWeight = exercise.currentWeight - 2.5
+                    exercise.currentWeight = max(0, newWeight)
+                } label: {
+                    Text("−")
+                        .font(Wire.Font.body)
+                        .foregroundColor(Wire.Color.white)
+                        .frame(width: 32, height: 32)
+                        .background(Wire.Color.black)
+                        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+                }
+
+                TextField("", value: Binding(
+                    get: { exercise.currentWeight },
+                    set: { exercise.currentWeight = max(0, min(500, $0)) }
+                ), format: .number)
+                    .font(Wire.Font.body)
+                    .foregroundColor(Wire.Color.white)
+                    .keyboardType(.decimalPad)
+                    .multilineTextAlignment(.center)
+                    .frame(width: 56, height: 32)
+                    .background(Wire.Color.black)
+                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+
+                Button {
+                    Wire.tap()
+                    let newWeight = exercise.currentWeight + 2.5
+                    exercise.currentWeight = min(500, newWeight)
+                } label: {
+                    Text("+")
+                        .font(Wire.Font.body)
+                        .foregroundColor(Wire.Color.white)
+                        .frame(width: 32, height: 32)
+                        .background(Wire.Color.black)
+                        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+                }
+            }
+
+            Text("KG")
+                .font(Wire.Font.tiny)
                 .foregroundColor(Wire.Color.gray)
+
             Button("×") {
                 Wire.tap()
                 days[selectedDayIndex].exercises.removeAll(where: { $0.id == exercise.id })

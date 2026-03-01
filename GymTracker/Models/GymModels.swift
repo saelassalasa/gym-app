@@ -184,6 +184,14 @@ final class WorkoutSession {
     }
 }
 
+// MARK: - Set Type (working, warmup, drop set, failure)
+enum SetType: String, Codable, CaseIterable {
+    case working = "WORKING"
+    case warmup  = "WARMUP"
+    case dropset = "DROP SET"
+    case failure = "FAILURE"
+}
+
 // MARK: - Workout Set
 @Model
 final class WorkoutSet {
@@ -192,15 +200,24 @@ final class WorkoutSet {
     var reps: Int
     var weight: Double
     var rpe: Int?
+    var setTypeRaw: String = "WORKING"
     var isCompleted: Bool = false
     var isSkipped: Bool = false
     var timestamp: Date = Date()
-    
+
     var exercise: Exercise?
     var session: WorkoutSession?
-    
+
+    /// Typed accessor for setTypeRaw
+    var setType: SetType {
+        get { SetType(rawValue: setTypeRaw) ?? .working }
+        set { setTypeRaw = newValue.rawValue }
+    }
+
     /// Brzycki Formula: 1RM = weight / (1.0278 − 0.0278 × reps)
+    /// Warmup sets return 0 — they should not count toward PR/1RM tracking
     var estimated1RM: Double {
+        guard setType != .warmup else { return 0 }
         guard reps > 0, weight > 0 else { return 0 }
         if reps == 1 { return weight }
         guard reps < 37 else { return weight * 0.65 }
@@ -212,6 +229,7 @@ final class WorkoutSet {
         reps: Int,
         weight: Double,
         rpe: Int? = nil,
+        setType: SetType = .working,
         isCompleted: Bool = false,
         isSkipped: Bool = false
     ) {
@@ -220,6 +238,7 @@ final class WorkoutSet {
         self.reps = reps
         self.weight = weight
         self.rpe = rpe
+        self.setTypeRaw = setType.rawValue
         self.isCompleted = isCompleted
         self.isSkipped = isSkipped
         self.timestamp = Date()
@@ -230,6 +249,11 @@ final class WorkoutSet {
 extension Exercise {
     /// Returns the last completed sets for this exercise from a previous session
     func lastSessionSets(in context: ModelContext) -> [WorkoutSet] {
+        lastSessionSets(in: context, excludingSession: nil)
+    }
+
+    /// Returns the last completed sets for this exercise, excluding a specific session (e.g. the current workout)
+    func lastSessionSets(in context: ModelContext, excludingSession excludeID: UUID?) -> [WorkoutSet] {
         let exerciseId = self.id
         let descriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate { set in
@@ -237,12 +261,18 @@ extension Exercise {
             },
             sortBy: [SortDescriptor(\.timestamp, order: .reverse)]
         )
-        
-        guard let allSets = try? context.fetch(descriptor),
-              let lastSession = allSets.first?.session else {
+
+        guard let allSets = try? context.fetch(descriptor) else { return [] }
+
+        // Find the most recent session that isn't the excluded one
+        guard let firstValidSet = allSets.first(where: {
+            guard let sid = $0.session?.id else { return false }
+            return excludeID == nil || sid != excludeID
+        }),
+              let lastSession = firstValidSet.session else {
             return []
         }
-        
+
         let lastSessionId = lastSession.id
         return allSets.filter { $0.session?.id == lastSessionId }
             .sorted { $0.setNumber < $1.setNumber }
@@ -260,6 +290,40 @@ extension Exercise {
             summary += " @ RPE \(rpe)"
         }
         return summary
+    }
+}
+
+// MARK: - Body Measurement
+@Model
+final class BodyMeasurement {
+    var id: UUID
+    var date: Date
+    var bodyWeight: Double?
+    var bodyFatPercent: Double?
+    var chest: Double?
+    var waist: Double?
+    var arms: Double?
+    var legs: Double?
+    var notes: String
+
+    init(
+        bodyWeight: Double? = nil,
+        bodyFatPercent: Double? = nil,
+        chest: Double? = nil,
+        waist: Double? = nil,
+        arms: Double? = nil,
+        legs: Double? = nil,
+        notes: String = ""
+    ) {
+        self.id = UUID()
+        self.date = Date()
+        self.bodyWeight = bodyWeight
+        self.bodyFatPercent = bodyFatPercent
+        self.chest = chest
+        self.waist = waist
+        self.arms = arms
+        self.legs = legs
+        self.notes = notes
     }
 }
 

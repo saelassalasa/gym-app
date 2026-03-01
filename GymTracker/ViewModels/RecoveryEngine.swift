@@ -150,7 +150,7 @@ enum RecoveryEngine {
         guard let sets = session.sets else { return [] }
 
         var grouped: [UUID: (exercise: Exercise, sets: [WorkoutSet])] = [:]
-        for set in sets where set.isCompleted && !set.isSkipped {
+        for set in sets where set.isCompleted && !set.isSkipped && set.setType != .warmup {
             guard let ex = set.exercise else { continue }
             grouped[ex.id, default: (ex, [])].sets.append(set)
         }

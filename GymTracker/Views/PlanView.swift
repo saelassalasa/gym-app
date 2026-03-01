@@ -7,7 +7,7 @@ import SwiftData
 
 struct PlanView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
+    @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted }, sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
     @Query private var templates: [WorkoutTemplate]
     
     // Calendar Manager - Singleton

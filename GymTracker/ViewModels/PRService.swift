@@ -105,19 +105,31 @@ enum PRService {
     // MARK: - Private
 
     private static func fetchCompletedSets(exerciseName: String, context: ModelContext) -> [WorkoutSet] {
-        let name = exerciseName
+        let lowered = exerciseName.lowercased()
         let descriptor = FetchDescriptor<WorkoutSet>(
             predicate: #Predicate<WorkoutSet> { set in
-                set.isCompleted && !set.isSkipped && set.exercise?.name == name
+                set.isCompleted && !set.isSkipped && set.exercise?.name == lowered
             }
         )
-        return (try? context.fetch(descriptor)) ?? []
+        // Try case-sensitive match first (fast path for normalized names)
+        let exact = (try? context.fetch(descriptor)) ?? []
+        if !exact.isEmpty { return exact }
+
+        // Fallback: fetch all completed sets and filter case-insensitively
+        let allDescriptor = FetchDescriptor<WorkoutSet>(
+            predicate: #Predicate<WorkoutSet> { set in
+                set.isCompleted && !set.isSkipped
+            }
+        )
+        let all = (try? context.fetch(allDescriptor)) ?? []
+        return all.filter { $0.exercise?.name.lowercased() == lowered }
     }
 
-    /// Brzycki formula — matches GymModels.estimated1RM
+    /// Brzycki formula — matches GymModels.WorkoutSet.estimated1RM exactly
     private static func estimatedOneRM(weight: Double, reps: Int) -> Double {
-        guard reps > 0 && reps <= 10 else { return weight }
+        guard reps > 0, weight > 0 else { return 0 }
         if reps == 1 { return weight }
-        return weight * 36.0 / (37.0 - Double(reps))
+        guard reps < 37 else { return weight * 0.65 }
+        return weight / (1.0278 - 0.0278 * Double(reps))
     }
 }

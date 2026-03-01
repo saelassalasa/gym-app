@@ -187,31 +187,86 @@ struct GenerateProgramView: View {
             }
 
             ForEach(exercises) { ex in
-                HStack {
-                    Text(ex.resolvedExerciseType == .compound ? "C" : "A")
-                        .font(Wire.Font.tiny)
-                        .foregroundColor(Wire.Color.black)
-                        .frame(width: 16, height: 16)
-                        .background(Wire.Color.white)
+                VStack(spacing: 0) {
+                    HStack {
+                        Text(ex.resolvedExerciseType == .compound ? "C" : "A")
+                            .font(Wire.Font.tiny)
+                            .foregroundColor(Wire.Color.black)
+                            .frame(width: 16, height: 16)
+                            .background(Wire.Color.white)
 
-                    Text(ex.name.uppercased())
-                        .font(Wire.Font.body)
-                        .foregroundColor(Wire.Color.white)
-                        .lineLimit(1)
+                        Text(ex.name.uppercased())
+                            .font(Wire.Font.body)
+                            .foregroundColor(Wire.Color.white)
+                            .lineLimit(1)
 
-                    Spacer()
+                        Spacer()
 
-                    Text(ex.resolvedPrimaryMuscle.rawValue.uppercased())
-                        .font(Wire.Font.tiny)
-                        .foregroundColor(Wire.Color.gray)
+                        Text(ex.resolvedPrimaryMuscle.rawValue.uppercased())
+                            .font(Wire.Font.tiny)
+                            .foregroundColor(Wire.Color.gray)
 
-                    Button("×") {
-                        Wire.tap()
-                        exercises.removeAll { $0.id == ex.id }
+                        Button("×") {
+                            Wire.tap()
+                            exercises.removeAll { $0.id == ex.id }
+                        }
+                        .font(Wire.Font.header)
+                        .foregroundColor(Wire.Color.danger)
+                        .padding(.leading, 8)
                     }
-                    .font(Wire.Font.header)
-                    .foregroundColor(Wire.Color.danger)
-                    .padding(.leading, 8)
+
+                    // Inline weight editor
+                    HStack(spacing: Wire.Layout.gap) {
+                        Text("WEIGHT")
+                            .font(Wire.Font.tiny)
+                            .foregroundColor(Wire.Color.gray)
+                            .kerning(1)
+
+                        Spacer()
+
+                        HStack(spacing: 0) {
+                            Button {
+                                Wire.tap()
+                                ex.currentWeight = max(0, ex.currentWeight - 2.5)
+                            } label: {
+                                Text("−")
+                                    .font(Wire.Font.body)
+                                    .foregroundColor(Wire.Color.white)
+                                    .frame(width: 32, height: 32)
+                                    .background(Wire.Color.black)
+                                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+                            }
+
+                            TextField("", value: Binding(
+                                get: { ex.currentWeight },
+                                set: { ex.currentWeight = max(0, min(500, $0)) }
+                            ), format: .number)
+                                .font(Wire.Font.body)
+                                .foregroundColor(Wire.Color.white)
+                                .keyboardType(.decimalPad)
+                                .multilineTextAlignment(.center)
+                                .frame(width: 56, height: 32)
+                                .background(Wire.Color.black)
+                                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+
+                            Button {
+                                Wire.tap()
+                                ex.currentWeight = min(500, ex.currentWeight + 2.5)
+                            } label: {
+                                Text("+")
+                                    .font(Wire.Font.body)
+                                    .foregroundColor(Wire.Color.white)
+                                    .frame(width: 32, height: 32)
+                                    .background(Wire.Color.black)
+                                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+                            }
+                        }
+
+                        Text("KG")
+                            .font(Wire.Font.tiny)
+                            .foregroundColor(Wire.Color.gray)
+                    }
+                    .padding(.top, Wire.Layout.gap)
                 }
                 .padding(Wire.Layout.pad)
                 .background(Wire.Color.black)

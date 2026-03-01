@@ -17,6 +17,14 @@ struct SettingsView: View {
         return calendarManager.scheduledDates.filter { $0 > todayStart }.count
     }
     
+    // Notification state
+    @State private var notificationsEnabled: Bool = NotificationManager.shared.isEnabled
+    @State private var reminderHour: Int = NotificationManager.shared.reminderHour
+
+    // Export state
+    @State private var showExportSheet = false
+    @State private var exportURL: URL?
+
     // Safety state
     @State private var showFuturePurgeAlert = false
     @State private var showHistoryWipeAlert = false
@@ -38,7 +46,9 @@ struct SettingsView: View {
                 ScrollView {
                     VStack(spacing: 24) {
                         apiKeySection
+                        remindersSection
                         futureOperationsSection
+                        dataExportSection
                         dangerZoneSection
                         
                         Text("V1.0.0 COMMAND PROTOCOL")
@@ -107,6 +117,13 @@ struct SettingsView: View {
         } message: {
             Text("LAST CHANCE. ALL data will be permanently destroyed. Default programs will be restored on next launch.")
         }
+        // Export share sheet
+        .sheet(isPresented: $showExportSheet) {
+            if let url = exportURL {
+                ShareSheetView(activityItems: [url])
+                    .presentationDetents([.medium, .large])
+            }
+        }
     }
     
     private var header: some View {
@@ -162,6 +179,95 @@ struct SettingsView: View {
         }
     }
     
+    private var remindersSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("REMINDERS")
+                .font(Wire.Font.caption)
+                .foregroundColor(Wire.Color.white)
+                .kerning(1)
+
+            Text("Daily push notification to train.")
+                .font(Wire.Font.tiny)
+                .foregroundColor(Wire.Color.gray)
+
+            Button {
+                Wire.tap()
+                if notificationsEnabled {
+                    notificationsEnabled = false
+                    NotificationManager.shared.isEnabled = false
+                } else {
+                    Task {
+                        let granted = await NotificationManager.shared.requestPermission()
+                        if granted {
+                            notificationsEnabled = true
+                            NotificationManager.shared.isEnabled = true
+                        }
+                    }
+                }
+            } label: {
+                HStack {
+                    Text("[ DAILY REMINDER ]")
+                    Spacer()
+                    Text(notificationsEnabled ? "ON" : "OFF")
+                }
+                .font(Wire.Font.body)
+                .foregroundColor(notificationsEnabled ? Wire.Color.white : Wire.Color.gray)
+                .padding(Wire.Layout.pad)
+                .background(Wire.Color.black)
+                .overlay(Rectangle().stroke(notificationsEnabled ? Wire.Color.white : Wire.Color.dark, lineWidth: Wire.Layout.border))
+            }
+
+            if notificationsEnabled {
+                HStack {
+                    Text("HOUR")
+                        .font(Wire.Font.caption)
+                        .foregroundColor(Wire.Color.gray)
+
+                    Spacer()
+
+                    Button {
+                        Wire.tap()
+                        if reminderHour > 6 {
+                            reminderHour -= 1
+                            NotificationManager.shared.reminderHour = reminderHour
+                        }
+                    } label: {
+                        Text("-")
+                            .font(Wire.Font.header)
+                            .foregroundColor(reminderHour > 6 ? Wire.Color.white : Wire.Color.dark)
+                            .frame(width: 44, height: 44)
+                            .overlay(Rectangle().stroke(reminderHour > 6 ? Wire.Color.white : Wire.Color.dark, lineWidth: Wire.Layout.border))
+                    }
+                    .disabled(reminderHour <= 6)
+
+                    Text(String(format: "%02d:00", reminderHour))
+                        .font(Wire.Font.body)
+                        .foregroundColor(Wire.Color.white)
+                        .frame(width: 80)
+                        .multilineTextAlignment(.center)
+
+                    Button {
+                        Wire.tap()
+                        if reminderHour < 22 {
+                            reminderHour += 1
+                            NotificationManager.shared.reminderHour = reminderHour
+                        }
+                    } label: {
+                        Text("+")
+                            .font(Wire.Font.header)
+                            .foregroundColor(reminderHour < 22 ? Wire.Color.white : Wire.Color.dark)
+                            .frame(width: 44, height: 44)
+                            .overlay(Rectangle().stroke(reminderHour < 22 ? Wire.Color.white : Wire.Color.dark, lineWidth: Wire.Layout.border))
+                    }
+                    .disabled(reminderHour >= 22)
+                }
+                .padding(Wire.Layout.pad)
+                .background(Wire.Color.black)
+                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+            }
+        }
+    }
+
     private var futureOperationsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("FUTURE OPERATIONS")
@@ -192,6 +298,59 @@ struct SettingsView: View {
         }
     }
     
+    private var dataExportSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("DATA EXPORT")
+                .font(Wire.Font.caption)
+                .foregroundColor(Wire.Color.white)
+                .kerning(1)
+
+            Text("Export all completed workout data.")
+                .font(Wire.Font.tiny)
+                .foregroundColor(Wire.Color.gray)
+
+            Button {
+                Wire.tap()
+                exportURL = DataExportService.exportToFile(context: modelContext)
+                if exportURL != nil {
+                    showExportSheet = true
+                }
+            } label: {
+                HStack {
+                    Text("[ EXPORT JSON ]")
+                    Spacer()
+                    Text("\(allSessions.filter { $0.isCompleted }.count)")
+                }
+                .font(Wire.Font.body)
+                .foregroundColor(allSessions.isEmpty ? Wire.Color.gray : Wire.Color.white)
+                .padding(Wire.Layout.pad)
+                .background(Wire.Color.black)
+                .overlay(Rectangle().stroke(allSessions.isEmpty ? Wire.Color.dark : Wire.Color.white, lineWidth: Wire.Layout.border))
+            }
+            .disabled(allSessions.isEmpty)
+
+            Button {
+                Wire.tap()
+                exportURL = DataExportService.exportCSVToFile(context: modelContext)
+                if exportURL != nil {
+                    showExportSheet = true
+                }
+            } label: {
+                HStack {
+                    Text("[ EXPORT CSV ]")
+                    Spacer()
+                    Text("\(allSessions.filter { $0.isCompleted }.count)")
+                }
+                .font(Wire.Font.body)
+                .foregroundColor(allSessions.isEmpty ? Wire.Color.gray : Wire.Color.white)
+                .padding(Wire.Layout.pad)
+                .background(Wire.Color.black)
+                .overlay(Rectangle().stroke(allSessions.isEmpty ? Wire.Color.dark : Wire.Color.white, lineWidth: Wire.Layout.border))
+            }
+            .disabled(allSessions.isEmpty)
+        }
+    }
+
     private var dangerZoneSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("DANGER ZONE")
@@ -273,17 +432,18 @@ struct SettingsView: View {
             debugLog("⚠️ Exercise fetch failed: \(error)")
         }
 
-        // Purge calendar events
-        Task {
-            let count = await calendarManager.purgeFutureEvents()
-            debugLog("☢️ Purged \(count) calendar events")
-        }
-
-        // Save
+        // Save first, then purge calendar
         do {
             try modelContext.save()
             debugLog("✅ NUCLEAR RESET COMPLETE: All data destroyed")
             Wire.success()
+
+            // Purge calendar events after successful save
+            Task {
+                let count = await calendarManager.purgeFutureEvents()
+                debugLog("☢️ Purged \(count) calendar events")
+            }
+
             dismiss()
         } catch {
             debugLog("❌ NUCLEAR RESET FAILED: \(error)")
@@ -320,4 +480,16 @@ struct SettingsView: View {
             wipeErrorMessage = "Wipe failed: \(error.localizedDescription)"
         }
     }
+}
+
+// MARK: - Share Sheet
+
+private struct ShareSheetView: UIViewControllerRepresentable {
+    let activityItems: [Any]
+
+    func makeUIViewController(context: Context) -> UIActivityViewController {
+        UIActivityViewController(activityItems: activityItems, applicationActivities: nil)
+    }
+
+    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }

@@ -88,9 +88,17 @@ enum FrequencyEngine {
 
     // MARK: - Weekly Analysis
 
+    @MainActor
     static func weeklyStatus(context: ModelContext, now: Date = Date()) -> [MuscleFrequencyStatus] {
         let calendar = Calendar.current
-        let startOfWeek = calendar.dateInterval(of: .weekOfYear, for: now)?.start ?? now
+        guard let weekInterval = calendar.dateInterval(of: .weekOfYear, for: now) else {
+            return MuscleGroup.allCases.map {
+                MuscleFrequencyStatus(muscle: $0, sessionsThisWeek: 0, setsThisWeek: 0,
+                                      optimalFrequency: target(for: $0).optimalFrequency,
+                                      optimalSets: target(for: $0).optimalSetsPerWeek, verdict: .noData)
+            }
+        }
+        let startOfWeek = weekInterval.start
 
         let descriptor = FetchDescriptor<WorkoutSession>(
             predicate: #Predicate { session in
@@ -99,22 +107,22 @@ enum FrequencyEngine {
         )
         let sessions = (try? context.fetch(descriptor)) ?? []
 
-        var muscleSessionDays: [MuscleGroup: Set<DateComponents>] = [:]
+        var muscleSessionDays: [MuscleGroup: Set<Date>] = [:]
         var muscleSets: [MuscleGroup: Int] = [:]
 
         for session in sessions {
             guard let sets = session.sets else { continue }
-            let dayComponents = calendar.dateComponents([.year, .month, .day], from: session.date)
+            let sessionDay = calendar.startOfDay(for: session.date)
 
             var grouped: [MuscleGroup: Int] = [:]
-            for set in sets where set.isCompleted && !set.isSkipped {
+            for set in sets where set.isCompleted && !set.isSkipped && set.setType != .warmup {
                 guard let exercise = set.exercise else { continue }
                 let muscle = exercise.resolvedPrimaryMuscle
                 grouped[muscle, default: 0] += 1
             }
 
             for (muscle, setCount) in grouped {
-                muscleSessionDays[muscle, default: []].insert(dayComponents)
+                muscleSessionDays[muscle, default: []].insert(sessionDay)
                 muscleSets[muscle, default: 0] += setCount
             }
         }

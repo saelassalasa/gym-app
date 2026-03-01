@@ -75,15 +75,22 @@ final class WorkoutManager {
     }
     
     var estimated1RM: Double {
-        guard repsInput > 0, repsInput <= 10, weightInput > 0 else { return weightInput }
+        guard repsInput > 0, weightInput > 0 else { return 0 }
         if repsInput == 1 { return weightInput }
-        return weightInput * 36.0 / (37.0 - Double(repsInput))
+        guard repsInput < 37 else { return weightInput * 0.65 }
+        return weightInput / (1.0278 - 0.0278 * Double(repsInput))
     }
     
     var lastSessionSummary: String? {
         currentExercise?.lastSessionSummary(in: context)
     }
-    
+
+    /// Per-set data from the last completed session for the current exercise (excludes current session)
+    var previousSetsForCurrentExercise: [WorkoutSet] {
+        guard let exercise = currentExercise else { return [] }
+        return exercise.lastSessionSets(in: context, excludingSession: session.id)
+    }
+
     // MARK: - Init
     
     init(template: WorkoutTemplate, container: ModelContainer) {
@@ -94,7 +101,18 @@ final class WorkoutManager {
         // Re-fetch template in child context to avoid cross-context references
         let templateID = template.id
         let descriptor = FetchDescriptor<WorkoutTemplate>(predicate: #Predicate { $0.id == templateID })
-        let localTemplate = (try? context.fetch(descriptor))?.first ?? template
+        guard let localTemplate = (try? context.fetch(descriptor))?.first else {
+            debugLog("[CRITICAL] Template not found in child context — using defensive copy")
+            // Create a minimal session without template reference rather than using cross-context object
+            let newSession = WorkoutSession(template: nil)
+            newSession.sets = []
+            context.insert(newSession)
+            try? context.save()
+            self.session = newSession
+            self._sessionID = newSession.id
+            self.saveError = "Template sync failed — workout started without template link"
+            return
+        }
 
         // Create session ONCE and persist immediately
         let newSession = WorkoutSession(template: localTemplate)
@@ -115,7 +133,7 @@ final class WorkoutManager {
     
     // MARK: - Actions
     
-    func logSet() {
+    func logSet(setType: SetType = .working) {
         guard !isSaving else { return }
         guard weightInput > 0 else {
             Wire.heavy()
@@ -128,8 +146,8 @@ final class WorkoutManager {
         isSaving = true
         defer { isSaving = false }
 
-        // Detect PRs BEFORE inserting the new set
-        let prs = PRService.detectPRs(
+        // Detect PRs BEFORE inserting the new set (skip PR detection for warmup sets)
+        let prs: Set<PRType> = setType == .warmup ? [] : PRService.detectPRs(
             weight: weightInput,
             reps: repsInput,
             exerciseName: exercise.name,
@@ -141,6 +159,7 @@ final class WorkoutManager {
             reps: repsInput,
             weight: weightInput,
             rpe: rpeInput,
+            setType: setType,
             isCompleted: true
         )
 
@@ -212,6 +231,25 @@ final class WorkoutManager {
             loadExerciseDefaults()
         }
         Wire.tap()
+    }
+
+    /// Reorder exercises in the current template via drag-and-drop.
+    /// Adjusts currentExerciseIndex so the user stays on the same exercise.
+    func reorderExercises(from source: IndexSet, to destination: Int) {
+        guard var exercises = session.template?.exercises else { return }
+        let currentID = currentExercise?.id
+        exercises.move(fromOffsets: source, toOffset: destination)
+        session.template?.exercises = exercises
+        // Keep the user on the same exercise they were viewing
+        if let id = currentID,
+           let newIndex = exercises.firstIndex(where: { $0.id == id }) {
+            currentExerciseIndex = newIndex
+        }
+        do {
+            try context.save()
+        } catch {
+            debugLog("[ERROR] Reorder save failed: \(error)")
+        }
     }
     
     func finishWorkout() {

@@ -21,6 +21,7 @@ import SwiftData
         }
         
         // Cycle: 0 → 1 → 2 → ... → N-1 → 0
+        guard !program.orderedTemplates.isEmpty else { return 0 }
         return (lastIndex + 1) % program.orderedTemplates.count
     }
     
