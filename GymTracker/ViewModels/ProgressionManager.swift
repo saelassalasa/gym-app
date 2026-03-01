@@ -40,6 +40,7 @@ class ProgressionManager {
     
     /// Check success and increment weight for completed exercises
     func checkAndIncrement(session: WorkoutSession) {
+        guard !session.progressionApplied else { return }
         guard let template = session.template, let sets = session.sets else { return }
         
         for exercise in template.exercises {
@@ -58,5 +59,7 @@ class ProgressionManager {
                 }
             }
         }
+
+        session.progressionApplied = true
     }
 }

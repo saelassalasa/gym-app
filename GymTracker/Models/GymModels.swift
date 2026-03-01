@@ -156,6 +156,7 @@ final class WorkoutSession {
     var duration: TimeInterval
     var notes: String
     var isCompleted: Bool
+    var progressionApplied: Bool
     var template: WorkoutTemplate?
     
     @Relationship(deleteRule: .cascade, inverse: \WorkoutSet.session)
@@ -166,6 +167,7 @@ final class WorkoutSession {
         duration: TimeInterval = 0,
         notes: String = "",
         isCompleted: Bool = false,
+        progressionApplied: Bool = false,
         template: WorkoutTemplate? = nil
     ) {
         self.id = UUID()
@@ -173,6 +175,7 @@ final class WorkoutSession {
         self.duration = duration
         self.notes = notes
         self.isCompleted = isCompleted
+        self.progressionApplied = progressionApplied
         self.template = template
     }
 }
