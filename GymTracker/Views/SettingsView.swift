@@ -43,7 +43,7 @@ struct SettingsView: View {
                             .foregroundColor(Wire.Color.dark)
                             .padding(.top, 40)
                     }
-                    .padding(16)
+                    .padding(Wire.Layout.pad)
                 }
             }
         }
@@ -90,7 +90,7 @@ struct SettingsView: View {
                 .font(Wire.Font.header)
                 .foregroundColor(Wire.Color.gray)
         }
-        .padding(16)
+        .padding(Wire.Layout.pad)
         .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
     }
     
@@ -126,7 +126,7 @@ struct SettingsView: View {
                         .background(Wire.Color.white)
                 }
             }
-            .padding(16)
+            .padding(Wire.Layout.pad)
             .background(Wire.Color.black)
             .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
         }
@@ -154,7 +154,7 @@ struct SettingsView: View {
                 }
                 .font(Wire.Font.body)
                 .foregroundColor(futurePlanCount == 0 ? Wire.Color.gray : Wire.Color.white)
-                .padding(16)
+                .padding(Wire.Layout.pad)
                 .background(Wire.Color.black)
                 .overlay(Rectangle().stroke(futurePlanCount == 0 ? Wire.Color.dark : Wire.Color.white, lineWidth: 1))
             }
@@ -184,7 +184,7 @@ struct SettingsView: View {
                 }
                 .font(Wire.Font.body)
                 .foregroundColor(allSessions.isEmpty ? Wire.Color.gray : Wire.Color.danger)
-                .padding(16)
+                .padding(Wire.Layout.pad)
                 .background(Wire.Color.black)
                 .overlay(Rectangle().stroke(allSessions.isEmpty ? Wire.Color.dark : Wire.Color.danger, lineWidth: 1))
             }

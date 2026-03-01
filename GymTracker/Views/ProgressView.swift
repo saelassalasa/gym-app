@@ -67,7 +67,7 @@ struct ProgressView: View {
             Spacer()
         }
         .padding(.horizontal, Wire.Layout.pad)
-        .padding(.vertical, 8)
+        .padding(.vertical, Wire.Layout.gap)
         .background(Wire.Color.black)
         .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
@@ -122,7 +122,7 @@ struct ProgressView: View {
                 .kerning(1)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
+        .padding(.vertical, Wire.Layout.gap)
         .background(Wire.Color.black)
         .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
@@ -147,7 +147,7 @@ struct ProgressView: View {
                 .font(Wire.Font.caption)
                 .kerning(1)
                 .frame(maxWidth: .infinity)
-                .padding(.vertical, 10)
+                .padding(.vertical, Wire.Layout.pad)
                 .foregroundColor(isSelected ? Wire.Color.black : Wire.Color.white)
                 .background(isSelected ? Wire.Color.white : Wire.Color.black)
                 .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))

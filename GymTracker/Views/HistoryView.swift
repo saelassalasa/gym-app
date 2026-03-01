@@ -86,7 +86,7 @@ struct HistoryView: View {
                 .foregroundColor(Wire.Color.gray)
         }
         .padding(.horizontal, Wire.Layout.pad)
-        .padding(.vertical, 8)
+        .padding(.vertical, Wire.Layout.gap)
         .background(Wire.Color.black)
         .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
@@ -145,7 +145,7 @@ struct HistoryView: View {
     
     private func sessionRow(_ session: WorkoutSession) -> some View {
         NavigationLink(destination: WorkoutDetailView(session: session)) {
-            HStack(spacing: 8) {
+            HStack(spacing: Wire.Layout.gap) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(session.template?.name.uppercased() ?? "—")
                         .font(Wire.Font.body)
@@ -325,7 +325,7 @@ struct SetEditorRow: View {
     let onDelete: () -> Void
     
     var body: some View {
-        HStack(spacing: 8) {
+        HStack(spacing: Wire.Layout.gap) {
             Text("\(set.setNumber)")
                 .font(Wire.Font.body)
                 .foregroundColor(Wire.Color.gray)
@@ -337,7 +337,7 @@ struct SetEditorRow: View {
                 .foregroundColor(Wire.Color.white)
                 .keyboardType(.decimalPad)
                 .frame(width: 60)
-                .padding(6)
+                .padding(Wire.Layout.gap)
                 .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
                 .onChange(of: set.weight) { _, new in
                     if !new.isFinite || new < 0 { set.weight = 0 }
@@ -353,7 +353,7 @@ struct SetEditorRow: View {
                 .foregroundColor(Wire.Color.white)
                 .keyboardType(.numberPad)
                 .frame(width: 40)
-                .padding(6)
+                .padding(Wire.Layout.gap)
                 .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
                 .onChange(of: set.reps) { _, new in
                     if new < 0 { set.reps = 0 }
@@ -370,7 +370,7 @@ struct SetEditorRow: View {
                     .frame(width: 32, height: 32)
             }
         }
-        .padding(8)
+        .padding(Wire.Layout.gap)
         .background(Wire.Color.black)
         .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
     }

@@ -62,7 +62,7 @@ struct WorkoutSummaryView: View {
             }
         }
         .padding(.horizontal, Wire.Layout.pad)
-        .padding(.vertical, 10)
+        .padding(.vertical, Wire.Layout.pad)
         .background(Wire.Color.black)
         .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
@@ -128,7 +128,7 @@ struct WorkoutSummaryView: View {
             .font(Wire.Font.tiny)
             .foregroundColor(Wire.Color.black)
             .kerning(1)
-            .padding(.horizontal, 6)
+            .padding(.horizontal, Wire.Layout.gap)
             .padding(.vertical, 3)
             .background(Wire.Color.white)
     }

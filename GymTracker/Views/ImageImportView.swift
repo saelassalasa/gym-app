@@ -117,8 +117,8 @@ struct ImageImportView: View {
     private var imagePickerSection: some View {
         VStack(spacing: Wire.Layout.pad) {
             Text("📸")
-                .font(.system(size: 64))
-                .padding(.top, 32)
+                .font(Wire.Font.mega)
+                .padding(.top, Wire.Layout.pad)
             
             Text("UPLOAD WORKOUT SCHEDULE")
                 .font(Wire.Font.body)
@@ -231,7 +231,7 @@ struct ImageImportView: View {
                     .foregroundColor(Wire.Color.gray)
                     .multilineTextAlignment(.center)
             }
-            .padding(32)
+            .padding(Wire.Layout.pad)
             
             Spacer()
         }
@@ -308,7 +308,7 @@ struct ImageImportView: View {
             ForEach(day.exercises) { exercise in
                 HStack {
                     Image(systemName: "line.3.horizontal")
-                        .font(.caption2)
+                        .font(Wire.Font.tiny)
                         .foregroundColor(Wire.Color.dark)
                     
                     Text(exercise.name.uppercased())
