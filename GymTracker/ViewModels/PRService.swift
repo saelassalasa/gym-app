@@ -104,14 +104,13 @@ enum PRService {
     // MARK: - Private
 
     private static func fetchCompletedSets(exerciseName: String, context: ModelContext) -> [WorkoutSet] {
+        let name = exerciseName
         let descriptor = FetchDescriptor<WorkoutSet>(
-            predicate: #Predicate { set in
-                set.isCompleted && !set.isSkipped
+            predicate: #Predicate<WorkoutSet> { set in
+                set.isCompleted && !set.isSkipped && set.exercise?.name == name
             }
         )
-        let allSets = (try? context.fetch(descriptor)) ?? []
-        let lowered = exerciseName.lowercased()
-        return allSets.filter { $0.exercise?.name.lowercased() == lowered }
+        return (try? context.fetch(descriptor)) ?? []
     }
 
     private static func estimatedOneRM(weight: Double, reps: Int) -> Double {
