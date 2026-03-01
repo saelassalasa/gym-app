@@ -14,7 +14,17 @@ struct GymTrackerApp: App {
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
         do {
-            return try ModelContainer(for: schema, configurations: [modelConfiguration])
+            let container = try ModelContainer(for: schema, configurations: [modelConfiguration])
+
+            // Set file protection on the store
+            if let storeURL = container.configurations.first?.url {
+                try? FileManager.default.setAttributes(
+                    [.protectionKey: FileProtectionType.complete],
+                    ofItemAtPath: storeURL.path()
+                )
+            }
+
+            return container
         } catch {
             fatalError("Could not create ModelContainer: \(error)")
         }
