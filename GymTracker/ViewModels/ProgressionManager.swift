@@ -1,7 +1,7 @@
 import Foundation
 import SwiftData
 
-class ProgressionManager {
+@MainActor class ProgressionManager {
     static let shared = ProgressionManager()
     
     private init() {}

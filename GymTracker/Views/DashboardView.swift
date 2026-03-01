@@ -530,7 +530,7 @@ struct StatsHeaderView: View {
 }
 
 extension WorkoutManager: Identifiable {
-    var id: UUID { session.id }
+    nonisolated var id: UUID { _sessionID }
 }
 
 #Preview {

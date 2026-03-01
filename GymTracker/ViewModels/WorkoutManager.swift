@@ -7,13 +7,14 @@ import Combine
 // Single source of truth for workout state. Prevents recursive saves.
 // ═══════════════════════════════════════════════════════════════════════════
 
-@Observable
+@MainActor @Observable
 final class WorkoutManager {
     
     // MARK: - State
     private(set) var session: WorkoutSession
     private let container: ModelContainer
     private let context: ModelContext
+    nonisolated let _sessionID: UUID
     var summaryContext: ModelContext { context }
     
     var currentExerciseIndex: Int = 0
@@ -90,6 +91,7 @@ final class WorkoutManager {
         try? context.save()
 
         self.session = newSession
+        self._sessionID = newSession.id
         loadExerciseDefaults()
     }
     
