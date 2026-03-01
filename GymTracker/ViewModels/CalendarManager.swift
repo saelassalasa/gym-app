@@ -50,19 +50,23 @@ final class CalendarManager {
         return true
     }
     
+    /// Check authorization, requesting access if needed
+    private func ensureAccess() async -> Bool {
+        if isAuthorized { return true }
+        return await requestAccess()
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // SCHEDULE WORKOUT
     // ═══════════════════════════════════════════════════════════════════════
     
     /// If `commit` is true, commits immediately. Pass false when batching.
     func scheduleWorkout(templateName: String, date: Date, durationMinutes: Int = 90, commit: Bool = true) async -> Bool {
-        // Live authorization check — catches mid-session revocations
-        guard isAuthorized else {
-            hasAccess = false
-            debugLog("❌ Cannot schedule: Calendar access revoked")
+        // Try requestAccess() as fallback if not yet authorized
+        guard await ensureAccess() else {
+            debugLog("❌ Cannot schedule: Calendar access not available")
             return false
         }
-        hasAccess = true
         
         // Get a writable calendar
         guard let calendar = eventStore.defaultCalendarForNewEvents else {
@@ -102,12 +106,10 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func fetchScheduledDates(for month: Date) async {
-        guard isAuthorized else {
-            hasAccess = false
-            debugLog("⚠️ Cannot fetch: Calendar access revoked")
+        guard await ensureAccess() else {
+            debugLog("⚠️ Cannot fetch: Calendar access not available")
             return
         }
-        hasAccess = true
 
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else {
@@ -144,11 +146,10 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func deleteScheduledWorkout(on date: Date) async -> Bool {
-        guard isAuthorized else {
-            hasAccess = false
+        guard await ensureAccess() else {
+            debugLog("❌ Cannot delete: Calendar access not available")
             return false
         }
-        hasAccess = true
 
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
@@ -197,15 +198,14 @@ final class CalendarManager {
     ) async -> Int {
         guard !pattern.isEmpty else { return 0 }
 
-        guard isAuthorized else {
-            hasAccess = false
-            debugLog("❌ Cannot deploy routine: Calendar access revoked")
+        guard await ensureAccess() else {
+            debugLog("❌ Cannot deploy routine: Calendar access not available")
             return 0
         }
-        hasAccess = true
-        
+
         let calendar = Calendar.current
         var scheduledCount = 0
+        let snapshotDates = scheduledDates
         let totalDays = weeks * 7
         
         // Start from tomorrow
@@ -260,6 +260,7 @@ final class CalendarManager {
                 try eventStore.commit()
             } catch {
                 debugLog("❌ Failed to commit routine: \(error)")
+                scheduledDates = snapshotDates
                 return 0
             }
         }
@@ -285,14 +286,13 @@ final class CalendarManager {
     ) async -> Int {
         guard !templates.isEmpty, !weekdays.isEmpty else { return 0 }
 
-        guard isAuthorized else {
-            hasAccess = false
-            debugLog("❌ Cannot deploy program: Calendar access revoked")
+        guard await ensureAccess() else {
+            debugLog("❌ Cannot deploy program: Calendar access not available")
             return 0
         }
-        hasAccess = true
-        
+
         let calendar = Calendar.current
+        let snapshotDates = scheduledDates
         let sortedTemplates = templates.sorted { $0.dayIndex < $1.dayIndex }
         var scheduledCount = 0
         
@@ -346,6 +346,7 @@ final class CalendarManager {
                 try eventStore.commit()
             } catch {
                 debugLog("❌ Failed to commit program: \(error)")
+                scheduledDates = snapshotDates
                 return 0
             }
         }
@@ -359,11 +360,10 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func purgeFutureEvents() async -> Int {
-        guard isAuthorized else {
-            hasAccess = false
+        guard await ensureAccess() else {
+            debugLog("❌ Cannot purge: Calendar access not available")
             return 0
         }
-        hasAccess = true
 
         let calendar = Calendar.current
         let now = Date()

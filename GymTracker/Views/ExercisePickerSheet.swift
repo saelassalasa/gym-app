@@ -34,6 +34,7 @@ struct ExercisePickerSheet: View {
                 resultsList
             }
         }
+        .onAppear { isAdding = false }
         .sheet(isPresented: $showCustomSheet) {
             AddExerciseSheet(exercises: $exercises)
         }

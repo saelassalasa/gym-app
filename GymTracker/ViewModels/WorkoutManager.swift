@@ -77,7 +77,7 @@ final class WorkoutManager {
     var estimated1RM: Double {
         guard repsInput > 0, repsInput <= 10, weightInput > 0 else { return weightInput }
         if repsInput == 1 { return weightInput }
-        return weightInput * (1.0 + Double(repsInput) / 30.0)
+        return weightInput * 36.0 / (37.0 - Double(repsInput))
     }
     
     var lastSessionSummary: String? {
@@ -220,6 +220,7 @@ final class WorkoutManager {
         defer { isSaving = false }
 
         stopTimer()
+        removeBackgroundObservers()
 
         session.isCompleted = true
         // Subtract time spent in background for accurate active duration

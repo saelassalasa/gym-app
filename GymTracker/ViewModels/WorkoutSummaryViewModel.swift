@@ -86,7 +86,8 @@ final class WorkoutSummaryViewModel {
         var effective = 0.0
         let setsWithRPE = sets.filter { ($0.rpe ?? 0) > 0 }
         for s in setsWithRPE {
-            let rpe = Double(s.rpe!)
+            guard let rpeVal = s.rpe else { continue }
+            let rpe = Double(rpeVal)
             if rpe >= 8 {
                 effective += 1.0
             } else if rpe >= 6 {

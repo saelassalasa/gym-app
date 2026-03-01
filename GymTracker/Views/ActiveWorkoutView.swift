@@ -90,6 +90,14 @@ struct ActiveWorkoutView: View {
         } message: {
             Text("Save this session and log all sets.")
         }
+        .alert("SAVE ERROR", isPresented: Binding(
+            get: { manager.saveError != nil },
+            set: { if !$0 { manager.saveError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(manager.saveError ?? "")
+        }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
                 Spacer()
@@ -396,7 +404,7 @@ struct ActiveWorkoutView: View {
                 
                 Spacer()
                 
-                Text("EPLEY")
+                Text("BRZYCKI")
                     .font(Wire.Font.tiny)
                     .foregroundColor(Wire.Color.gray)
             }
