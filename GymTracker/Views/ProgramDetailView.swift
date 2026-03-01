@@ -50,6 +50,7 @@ struct ProgramDetailView: View {
         VStack(spacing: 16) {
             HStack {
                 Button {
+                    Wire.tap()
                     dismiss()
                 } label: {
                     Image(systemName: "chevron.left")
@@ -81,7 +82,7 @@ struct ProgramDetailView: View {
                 .padding(.horizontal)
                 .padding(.vertical, 8)
                 .background(Wire.Color.black)
-                .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: 1))
+                .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
         }
         .padding(Wire.Layout.pad)
         .background(Wire.Color.black)
@@ -94,7 +95,7 @@ struct ProgramDetailView: View {
         HStack {
             Image(systemName: "line.3.horizontal")
                 .foregroundColor(Wire.Color.gray)
-                .font(.system(size: 20))
+                .font(Wire.Font.header)
                 .padding(.trailing, 8)
             
             Text(template.name.uppercased())
@@ -108,6 +109,7 @@ struct ProgramDetailView: View {
                 .foregroundColor(Wire.Color.gray)
             
             Button {
+                Wire.tap()
                 templateToEdit = template
             } label: {
                 Image(systemName: "pencil")
@@ -118,7 +120,7 @@ struct ProgramDetailView: View {
         }
         .padding(16)
         .background(Wire.Color.black)
-        .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
     }
     
     // MARK: - Actions

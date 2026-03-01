@@ -37,6 +37,12 @@ enum Wire {
         
         /// DANGER - Alert Red - ONLY for failure/stop
         static let danger = SwiftUI.Color(hex: "FF0000")
+
+        /// Recovery status colors
+        static let ready = SwiftUI.Color(red: 0.18, green: 0.80, blue: 0.44)
+        static let recovering = SwiftUI.Color(red: 0.95, green: 0.77, blue: 0.06)
+        static let fatigued = SwiftUI.Color(red: 0.91, green: 0.30, blue: 0.24)
+        static let peaked = SwiftUI.Color(red: 0.61, green: 0.35, blue: 0.71)
     }
     
     // ═══════════════════════════════════════════════════════════════════════

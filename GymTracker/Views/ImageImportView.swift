@@ -182,6 +182,7 @@ struct ImageImportView: View {
             
             HStack(spacing: Wire.Layout.gap) {
                 Button {
+                    Wire.tap()
                     selectedImage = nil
                     selectedItem = nil
                     errorMessage = nil
@@ -195,6 +196,7 @@ struct ImageImportView: View {
                 }
                 
                 Button {
+                    Wire.tap()
                     parseImage()
                 } label: {
                     Text("PARSE")
@@ -264,6 +266,7 @@ struct ImageImportView: View {
             
             HStack(spacing: Wire.Layout.gap) {
                 Button {
+                    Wire.tap()
                     // Reset
                     hasEditableProgram = false
                     parsedProgram = nil
@@ -279,6 +282,7 @@ struct ImageImportView: View {
                 }
                 
                 Button {
+                    Wire.tap()
                     saveEditableProgram()
                 } label: {
                     Text("SAVE")

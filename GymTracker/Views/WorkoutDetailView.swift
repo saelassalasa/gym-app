@@ -147,7 +147,7 @@ struct WorkoutDetailView: View {
                     .foregroundColor(Wire.Color.gray)
                     .padding(.horizontal, 6)
                     .padding(.vertical, 2)
-                    .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: 1))
+                    .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
             }
             
             // Sets List

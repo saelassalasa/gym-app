@@ -101,7 +101,7 @@ struct SettingsView: View {
                 .foregroundColor(Wire.Color.gray)
         }
         .padding(Wire.Layout.pad)
-        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
     
     // MARK: - Sections
@@ -138,7 +138,7 @@ struct SettingsView: View {
             }
             .padding(Wire.Layout.pad)
             .background(Wire.Color.black)
-            .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+            .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
         }
     }
     
@@ -166,7 +166,7 @@ struct SettingsView: View {
                 .foregroundColor(futurePlanCount == 0 ? Wire.Color.gray : Wire.Color.white)
                 .padding(Wire.Layout.pad)
                 .background(Wire.Color.black)
-                .overlay(Rectangle().stroke(futurePlanCount == 0 ? Wire.Color.dark : Wire.Color.white, lineWidth: 1))
+                .overlay(Rectangle().stroke(futurePlanCount == 0 ? Wire.Color.dark : Wire.Color.white, lineWidth: Wire.Layout.border))
             }
             .disabled(futurePlanCount == 0)
         }
@@ -196,7 +196,7 @@ struct SettingsView: View {
                 .foregroundColor(allSessions.isEmpty ? Wire.Color.gray : Wire.Color.danger)
                 .padding(Wire.Layout.pad)
                 .background(Wire.Color.black)
-                .overlay(Rectangle().stroke(allSessions.isEmpty ? Wire.Color.dark : Wire.Color.danger, lineWidth: 1))
+                .overlay(Rectangle().stroke(allSessions.isEmpty ? Wire.Color.dark : Wire.Color.danger, lineWidth: Wire.Layout.border))
             }
             .disabled(allSessions.isEmpty)
         }

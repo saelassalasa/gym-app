@@ -151,7 +151,7 @@ struct ExerciseRow: View {
         HStack {
             // DRAG HANDLE
             Image(systemName: "line.3.horizontal")
-                .font(.system(size: 20))
+                .font(Wire.Font.header)
                 .foregroundColor(Wire.Color.gray)
                 .padding(.trailing, 8)
             

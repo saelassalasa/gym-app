@@ -260,9 +260,10 @@ struct DashboardView: View {
                             .foregroundColor(Wire.Color.gray)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .overlay(Rectangle().stroke(Wire.Color.gray, lineWidth: 1))
+                            .overlay(Rectangle().stroke(Wire.Color.gray, lineWidth: Wire.Layout.border))
                     } else {
                         Button {
+                            Wire.tap()
                             setActiveProgram(program)
                         } label: {
                             Text("ACTIVATE")
@@ -270,7 +271,7 @@ struct DashboardView: View {
                                 .foregroundColor(Wire.Color.white)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
-                                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
                         }
                     }
                 }

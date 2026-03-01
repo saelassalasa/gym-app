@@ -6,11 +6,11 @@ import SwiftData
 // ═══════════════════════════════════════════════════════════════════════════
 
 enum RecoveryColor {
-    static let ready       = Color(hex: "4CAF50") // Green
-    static let recovering  = Color(hex: "FFC107") // Yellow/Amber
-    static let fatigued    = Color(hex: "F44336") // Red
-    static let atrophy     = Color(hex: "9C27B0") // Purple
-    static let noData      = Color(hex: "616161") // Gray
+    static let ready       = Wire.Color.ready
+    static let recovering  = Wire.Color.recovering
+    static let fatigued    = Wire.Color.fatigued
+    static let atrophy     = Wire.Color.peaked
+    static let noData      = Wire.Color.gray
 
     static func from(_ phase: RecoveryPhase) -> Color {
         switch phase {

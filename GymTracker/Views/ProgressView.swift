@@ -182,7 +182,7 @@ struct ProgressChartView: View {
                 }
                 .chartYAxis {
                     AxisMarks(position: .leading) { _ in
-                        AxisGridLine(stroke: StrokeStyle(lineWidth: 1, dash: [4]))
+                        AxisGridLine(stroke: StrokeStyle(lineWidth: Wire.Layout.border, dash: [4]))
                             .foregroundStyle(Wire.Color.dark)
                         AxisValueLabel()
                             .foregroundStyle(Wire.Color.gray)

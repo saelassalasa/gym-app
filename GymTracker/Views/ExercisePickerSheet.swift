@@ -125,6 +125,7 @@ struct ExercisePickerSheet: View {
             LazyVStack(spacing: 0) {
                 ForEach(filteredExercises) { template in
                     Button {
+                        Wire.tap()
                         addFromTemplate(template)
                     } label: {
                         exerciseRow(template)
@@ -134,6 +135,7 @@ struct ExercisePickerSheet: View {
 
                 // Custom exercise button
                 Button {
+                    Wire.tap()
                     showCustomSheet = true
                 } label: {
                     HStack {

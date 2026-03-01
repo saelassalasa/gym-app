@@ -153,7 +153,7 @@ struct PlanView: View {
         .padding(.horizontal, Wire.Layout.pad)
         .padding(.vertical, Wire.Layout.gap)
         .background(Wire.Color.black)
-        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -308,7 +308,7 @@ struct PlanView: View {
                             path.move(to: CGPoint(x: 4, y: 4))
                             path.addLine(to: CGPoint(x: width - 4, y: width - 4))
                         }
-                        .stroke(Wire.Color.danger.opacity(0.4), lineWidth: 1)
+                        .stroke(Wire.Color.danger.opacity(0.4), lineWidth: Wire.Layout.border)
                     }
                     
                     VStack(spacing: 0) {
@@ -366,12 +366,12 @@ struct PlanView: View {
             }
             HStack(spacing: 4) {
                 Rectangle().fill(Wire.Color.black).frame(width: 14, height: 14)
-                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
                 Text("PLAN").font(Wire.Font.tiny).foregroundColor(Wire.Color.gray)
             }
             HStack(spacing: 4) {
                 Rectangle().fill(Wire.Color.black).frame(width: 14, height: 14)
-                    .overlay(Rectangle().stroke(Wire.Color.danger, lineWidth: 1))
+                    .overlay(Rectangle().stroke(Wire.Color.danger, lineWidth: Wire.Layout.border))
                 Text("MISS").font(Wire.Font.tiny).foregroundColor(Wire.Color.danger)
             }
         }
@@ -566,7 +566,7 @@ struct SchedulerSheet: View {
                 .foregroundColor(Wire.Color.gray)
         }
         .padding(Wire.Layout.pad)
-        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
     
     private var dateSection: some View {
@@ -580,7 +580,7 @@ struct SchedulerSheet: View {
                 .foregroundColor(Wire.Color.white)
         }
         .padding(Wire.Layout.pad)
-        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
     
     private var timeSection: some View {
@@ -607,7 +607,7 @@ struct SchedulerSheet: View {
                         .foregroundColor(Wire.Color.white)
                         .frame(width: 40, height: 40)
                 }
-                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
                 
                 Text(":")
                     .font(Wire.Font.header)
@@ -630,13 +630,13 @@ struct SchedulerSheet: View {
                         .foregroundColor(Wire.Color.white)
                         .frame(width: 40, height: 40)
                 }
-                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
                 
                 Spacer()
             }
         }
         .padding(Wire.Layout.pad)
-        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
     
     private var templateSection: some View {
@@ -661,7 +661,7 @@ struct SchedulerSheet: View {
                     }
                     .padding(Wire.Layout.pad)
                     .background(selectedTemplate?.id == t.id ? Wire.Color.white : Wire.Color.black)
-                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
                 }
             }
         }
@@ -689,7 +689,7 @@ struct SchedulerSheet: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, Wire.Layout.pad)
                 .background(selectedTemplate != nil ? Wire.Color.white : Wire.Color.black)
-                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
         }
         .disabled(selectedTemplate == nil)
         .padding(Wire.Layout.pad)
@@ -748,12 +748,13 @@ struct SchedulerSheet: View {
                 }
                 .padding(Wire.Layout.gap)
                 .background(Wire.Color.black)
-                .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: 1))
+                .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
                 
                 // Deploy Button
                 Button {
+                    Wire.heavy()
                     isDeploying = true
-                    
+
                     Task {
                         let sortedTemplates = templates.sorted { $0.dayIndex < $1.dayIndex }
                         // Default: Mon-Fri (weekday numbers: 2=Mon, 3=Tue, 4=Wed, 5=Thu, 6=Fri)
@@ -788,13 +789,13 @@ struct SchedulerSheet: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Wire.Layout.pad)
                     .background(!templates.isEmpty ? Wire.Color.white : Wire.Color.black)
-                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+                    .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
                 }
                 .disabled(templates.isEmpty || isDeploying)
             }
         }
         .padding(Wire.Layout.pad)
         .background(Wire.Color.black)
-        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: 1))
+        .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
     }
 }

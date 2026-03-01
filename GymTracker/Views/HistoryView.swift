@@ -18,14 +18,14 @@ struct HistoryView: View {
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "dd.MM.yy HH:mm"
-        f.locale = Locale(identifier: "en_US_POSIX")
+        f.locale = .current
         return f
     }()
 
     private static let sectionDateFormatter: DateFormatter = {
         let f = DateFormatter()
         f.dateFormat = "EEEE, dd MMM yyyy"
-        f.locale = Locale(identifier: "en_US_POSIX")
+        f.locale = .current
         return f
     }()
 
