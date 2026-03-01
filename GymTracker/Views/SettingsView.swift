@@ -21,6 +21,7 @@ struct SettingsView: View {
     @State private var showFuturePurgeAlert = false
     @State private var showHistoryWipeAlert = false
     @State private var showFinalConfirmation = false
+    @State private var wipeErrorMessage: String?
     
     // API Key state
     @State private var apiKeyInput: String = GeminiService.apiKey ?? ""
@@ -76,6 +77,15 @@ struct SettingsView: View {
             Button("ABORT", role: .cancel) {}
         } message: {
             Text("LAST CHANCE. \(allSessions.count) records will be permanently destroyed.")
+        }
+        // Alert 4: Wipe Error
+        .alert("WIPE FAILED", isPresented: Binding(
+            get: { wipeErrorMessage != nil },
+            set: { if !$0 { wipeErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(wipeErrorMessage ?? "Unknown error")
         }
     }
     
@@ -226,10 +236,10 @@ struct SettingsView: View {
             try modelContext.save()
             debugLog("✅ WIPE COMPLETE: All sessions deleted, weights reset")
             Wire.success()
+            dismiss()
         } catch {
             debugLog("❌ WIPE FAILED: \(error)")
+            wipeErrorMessage = "Wipe failed: \(error.localizedDescription)"
         }
-
-        dismiss()
     }
 }

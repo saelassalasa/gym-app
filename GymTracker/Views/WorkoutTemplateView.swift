@@ -49,7 +49,21 @@ struct WorkoutTemplateView: View {
                 // Pre-fill if editing
                 if let template = templateToEdit {
                     templateName = template.name
-                    exercises = template.exercises
+                    // Defensive copies — avoid mutating shared @Model references
+                    exercises = template.exercises.map { ex in
+                        Exercise(
+                            name: ex.name,
+                            category: ex.category,
+                            exerciseType: ex.exerciseType ?? .compound,
+                            primaryMuscle: ex.primaryMuscle ?? .chest,
+                            notes: ex.notes,
+                            restSeconds: ex.restSeconds,
+                            currentWeight: ex.currentWeight,
+                            targetIncrement: ex.targetIncrement,
+                            targetReps: ex.targetReps,
+                            targetSets: ex.targetSets
+                        )
+                    }
                 }
             }
         }
@@ -211,6 +225,8 @@ struct AddExerciseSheet: View {
     
     @State private var name = ""
     @State private var category: ExerciseCategory = .push
+    @State private var exerciseType: ExerciseType = .accessory
+    @State private var primaryMuscle: MuscleGroup = .chest
     @State private var weight: String = "20"
     @State private var reps: Int = 8
     @State private var sets: Int = 3
@@ -239,6 +255,8 @@ struct AddExerciseSheet: View {
                     VStack(spacing: Wire.Layout.gap) {
                         WireInput(label: "Name", value: $name)
                         categoryPicker
+                        typePicker
+                        musclePicker
                         WireInput(label: "Weight (kg)", value: $weight, keyboard: .decimalPad)
                         
                         HStack(spacing: Wire.Layout.gap) {
@@ -254,6 +272,9 @@ struct AddExerciseSheet: View {
                 WireButton("ADD", inverted: !name.isEmpty) { addExercise() }
                     .padding(Wire.Layout.pad)
                     .disabled(name.isEmpty)
+                    .onChange(of: category) { _, newCat in
+                        primaryMuscle = Self.defaultMuscle(for: newCat)
+                    }
             }
         }
     }
@@ -284,11 +305,77 @@ struct AddExerciseSheet: View {
         }
     }
     
+    private var typePicker: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("TYPE")
+                .font(Wire.Font.caption)
+                .foregroundColor(Wire.Color.gray)
+                .kerning(1)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 4) {
+                ForEach(ExerciseType.allCases, id: \.self) { t in
+                    Button {
+                        Wire.tap()
+                        exerciseType = t
+                    } label: {
+                        Text(t.rawValue)
+                            .font(Wire.Font.caption)
+                            .foregroundColor(exerciseType == t ? Wire.Color.black : Wire.Color.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(exerciseType == t ? Wire.Color.white : Wire.Color.black)
+                            .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+                    }
+                }
+            }
+        }
+    }
+
+    private var musclePicker: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            Text("PRIMARY MUSCLE")
+                .font(Wire.Font.caption)
+                .foregroundColor(Wire.Color.gray)
+                .kerning(1)
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())], spacing: 4) {
+                ForEach(MuscleGroup.allCases, id: \.self) { m in
+                    Button {
+                        Wire.tap()
+                        primaryMuscle = m
+                    } label: {
+                        Text(m.rawValue.uppercased())
+                            .font(Wire.Font.caption)
+                            .foregroundColor(primaryMuscle == m ? Wire.Color.black : Wire.Color.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(primaryMuscle == m ? Wire.Color.white : Wire.Color.black)
+                            .overlay(Rectangle().stroke(Wire.Color.white, lineWidth: Wire.Layout.border))
+                    }
+                }
+            }
+        }
+    }
+
+    /// Map category to the most common primary muscle for that movement pattern
+    private static func defaultMuscle(for category: ExerciseCategory) -> MuscleGroup {
+        switch category {
+        case .push:   return .chest
+        case .pull:   return .back
+        case .legs:   return .quads
+        case .core:   return .core
+        case .cardio: return .quads
+        case .other:  return .shoulders
+        }
+    }
+
     private func addExercise() {
         Wire.heavy()
         exercises.append(Exercise(
             name: name,
             category: category,
+            exerciseType: exerciseType,
+            primaryMuscle: primaryMuscle,
             restSeconds: rest,
             currentWeight: Double(weight) ?? 20,
             targetReps: reps,

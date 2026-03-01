@@ -205,7 +205,7 @@ struct PlanView: View {
     
     private func weekdayRow(cellWidth: CGFloat) -> some View {
         HStack(spacing: 2) {
-            ForEach(weekdays, id: \.self) { day in
+            ForEach(Array(weekdays.enumerated()), id: \.offset) { _, day in
                 Text(day)
                     .font(Wire.Font.caption)
                     .foregroundColor(Wire.Color.gray)
@@ -484,6 +484,9 @@ extension Array {
 
 // ═══════════════════════════════════════════════════════════════════════════
 // DATE EXTENSION FOR SHEET ITEM
+// ⚠️ Global retroactive conformance — may conflict with other libraries
+// that also extend Date with Identifiable. Kept for convenience but
+// consider replacing with a DateWrapper if conflicts arise.
 // ═══════════════════════════════════════════════════════════════════════════
 
 extension Date: @retroactive Identifiable {

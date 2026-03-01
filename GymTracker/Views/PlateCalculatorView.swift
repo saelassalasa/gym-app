@@ -16,14 +16,16 @@ struct PlateCalculatorView: View {
     // Calculate plates needed per side
     private var platesPerSide: [Double] {
         guard targetWeight.isFinite, barWeight.isFinite,
-              targetWeight > barWeight, targetWeight <= 2000 else { return [] }
+              targetWeight >= 0, barWeight >= 0,
+              targetWeight >= barWeight, targetWeight <= 2000 else { return [] }
         var remaining = (targetWeight - barWeight) / 2
-        
+
         var result: [Double] = []
         for plate in plates {
             while remaining >= plate {
                 result.append(plate)
                 remaining -= plate
+                remaining = (remaining * 100).rounded() / 100
             }
         }
         return result
@@ -121,7 +123,11 @@ struct PlateCalculatorView: View {
                     .foregroundColor(Wire.Color.gray)
                     .kerning(1)
                 
-                if platesPerSide.isEmpty {
+                if platesPerSide.isEmpty && targetWeight >= barWeight && targetWeight > 0 && barWeight >= 0 {
+                    Text("BAR ONLY")
+                        .font(Wire.Font.large)
+                        .foregroundColor(Wire.Color.white)
+                } else if platesPerSide.isEmpty {
                     Text("—")
                         .font(Wire.Font.large)
                         .foregroundColor(Wire.Color.gray)
@@ -189,6 +195,12 @@ struct PlateCalculatorView: View {
         }
     }
     
+    private func formatWeight(_ weight: Double) -> String {
+        weight.truncatingRemainder(dividingBy: 1) == 0
+            ? "\(Int(weight))"
+            : String(format: "%.1f", weight)
+    }
+
     private func formatPlate(_ weight: Double) -> String {
         if weight == floor(weight) {
             return "\(Int(weight))"
@@ -205,7 +217,7 @@ struct PlateCalculatorView: View {
                         .foregroundColor(Wire.Color.gray)
                     
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(Int(achievedWeight))")
+                        Text(formatWeight(achievedWeight))
                             .font(Wire.Font.large)
                             .foregroundColor(isExact ? Wire.Color.white : Wire.Color.danger)
                         
@@ -218,7 +230,7 @@ struct PlateCalculatorView: View {
                 Spacer()
                 
                 if !isExact && targetWeight > 0 {
-                    Text("≠ \(Int(targetWeight))")
+                    Text("≠ \(formatWeight(targetWeight))")
                         .font(Wire.Font.body)
                         .foregroundColor(Wire.Color.danger)
                 }

@@ -20,6 +20,7 @@ struct HologramBodyView: UIViewRepresentable {
         scnView.allowsCameraControl = true
         scnView.antialiasingMode = .multisampling4X
         scnView.autoenablesDefaultLighting = false
+        scnView.preferredFramesPerSecond = 30
         scnView.scene = HologramBodyBuilder.buildScene(muscleVolumes: muscleVolumes)
         return scnView
     }
@@ -205,12 +206,25 @@ enum HologramBodyBuilder {
         if let url {
             let asset = MDLAsset(url: url)
             let objScene = SCNScene(mdlAsset: asset)
+            let children = Array(objScene.rootNode.childNodes)
+
+            guard !children.isEmpty else {
+                // Empty asset — use fallback
+                let text = SCNText(string: "BODY\nMODEL\nN/A", extrusionDepth: 0.01)
+                text.font = .monospacedSystemFont(ofSize: 0.15, weight: .bold)
+                text.firstMaterial?.diffuse.contents = UIColor(white: 0.3, alpha: 1.0)
+                let textNode = SCNNode(geometry: text)
+                textNode.name = "bodyFallback"
+                textNode.position = SCNVector3(-0.3, -0.1, 0)
+                scene.rootNode.addChildNode(textNode)
+                return scene
+            }
 
             let bodyRoot = SCNNode()
             bodyRoot.name = "bodyRoot"
             bodyRoot.scale = SCNVector3(0.1, 0.1, 0.1) // dm → meters
 
-            for child in objScene.rootNode.childNodes {
+            for child in children {
                 bodyRoot.addChildNode(child)
             }
             scene.rootNode.addChildNode(bodyRoot)
@@ -232,16 +246,12 @@ enum HologramBodyBuilder {
     // MARK: - Update Intensities
 
     static func updateIntensities(scene: SCNScene, muscleVolumes: [MuscleGroup: Double]) {
-        var mat: SCNMaterial?
-        scene.rootNode.enumerateChildNodes { node, stop in
+        scene.rootNode.enumerateChildNodes { node, _ in
             if node.geometry != nil, node.camera == nil,
-               let m = node.geometry?.materials.first {
-                mat = m
-                stop.pointee = true
+               let mat = node.geometry?.materials.first {
+                setIntensityUniforms(mat, muscleVolumes: muscleVolumes)
             }
         }
-        guard let mat else { return }
-        setIntensityUniforms(mat, muscleVolumes: muscleVolumes)
     }
 
     // MARK: - Material
@@ -249,9 +259,9 @@ enum HologramBodyBuilder {
     private static func applyHologramMaterial(scene: SCNScene, muscleVolumes: [MuscleGroup: Double]) {
         let mat = SCNMaterial()
         mat.lightingModel = .constant
-        mat.isDoubleSided = false
+        mat.isDoubleSided = true
         mat.blendMode = .alpha
-        mat.writesToDepthBuffer = false
+        mat.writesToDepthBuffer = true
         mat.diffuse.contents = UIColor.white
         mat.transparent.contents = UIColor.white
 

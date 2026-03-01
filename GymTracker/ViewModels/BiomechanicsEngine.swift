@@ -14,7 +14,8 @@ enum BiomechanicsEngine {
         var raw: ActivationMap = [:]
         for s in sets {
             guard let ex = s.exercise else { continue }
-            let volume = Double(s.reps) * s.weight
+            // Bodyweight exercises (weight=0): use reps as volume proxy
+            let volume = s.weight > 0 ? Double(s.reps) * s.weight : Double(s.reps) * 1.0
             let rpeMultiplier = rpeWeight(s.rpe)
             let activations = muscleActivation(for: ex)
             for (muscle, intensity) in activations {
@@ -149,6 +150,9 @@ enum BiomechanicsEngine {
         r["push-up"] = pushUp
         r["pushup"] = pushUp
 
+        let floorPress: ActivationMap = [.chest: 0.8, .triceps: 0.7, .shoulders: 0.4]
+        r["floor press"] = floorPress
+
         // ═══════════════════════════════════════
         // SHOULDERS — Push
         // ═══════════════════════════════════════
@@ -168,6 +172,15 @@ enum BiomechanicsEngine {
         r["seated db press"] = dbOHP
         r["arnold press"] = [.shoulders: 1.0, .triceps: 0.4, .chest: 0.3]
 
+        let pushPress: ActivationMap = [.shoulders: 1.0, .triceps: 0.6, .chest: 0.3, .quads: 0.3, .core: 0.4]
+        r["push press"] = pushPress
+
+        let landminePress: ActivationMap = [.shoulders: 0.9, .chest: 0.5, .triceps: 0.4, .core: 0.4]
+        r["landmine press"] = landminePress
+
+        let zPress: ActivationMap = [.shoulders: 1.0, .triceps: 0.6, .core: 0.5]
+        r["z press"] = zPress
+
         let latRaise: ActivationMap = [.shoulders: 1.0]
         r["lateral raise"] = latRaise
         r["lateral raises"] = latRaise
@@ -181,6 +194,9 @@ enum BiomechanicsEngine {
         r["front raise"] = frontRaise
         r["front raises"] = frontRaise
         r["front delt raise"] = frontRaise
+
+        let luRaise: ActivationMap = [.shoulders: 1.0, .back: 0.2]
+        r["lu raise"] = luRaise
 
         let rearDelt: ActivationMap = [.shoulders: 0.9, .back: 0.3]
         r["rear delt fly"] = rearDelt
@@ -243,6 +259,9 @@ enum BiomechanicsEngine {
         r["kickbacks"] = kickback
         r["cable tricep kickback"] = kickback
 
+        let jmPress: ActivationMap = [.triceps: 1.0, .chest: 0.4, .shoulders: 0.3]
+        r["jm press"] = jmPress
+
         // ═══════════════════════════════════════
         // BACK — Pull
         // ═══════════════════════════════════════
@@ -290,6 +309,9 @@ enum BiomechanicsEngine {
         let sumo: ActivationMap = [.glutes: 1.0, .quads: 0.6, .hamstrings: 0.5, .back: 0.6, .core: 0.5]
         r["sumo deadlift"] = sumo
 
+        let deficitDeadlift: ActivationMap = [.back: 0.8, .hamstrings: 0.8, .glutes: 1.0, .quads: 0.5, .core: 0.6]
+        r["deficit deadlift"] = deficitDeadlift
+
         let rdl: ActivationMap = [.hamstrings: 1.0, .glutes: 0.8, .back: 0.5, .core: 0.4]
         r["romanian deadlift"] = rdl
         r["rdl"] = rdl
@@ -304,6 +326,15 @@ enum BiomechanicsEngine {
         let machineRow: ActivationMap = [.back: 1.0, .biceps: 0.4]
         r["machine row"] = machineRow
         r["chest supported row"] = machineRow
+
+        let sealRow: ActivationMap = [.back: 1.0, .biceps: 0.5]
+        r["seal row"] = sealRow
+
+        let meadowsRow: ActivationMap = [.back: 1.0, .biceps: 0.4, .shoulders: 0.3, .core: 0.3]
+        r["meadows row"] = meadowsRow
+
+        let helmsRow: ActivationMap = [.back: 1.0, .biceps: 0.5, .shoulders: 0.3]
+        r["helms row"] = helmsRow
 
         let straightArmPull: ActivationMap = [.back: 1.0, .core: 0.3]
         r["straight arm pulldown"] = straightArmPull
@@ -386,6 +417,9 @@ enum BiomechanicsEngine {
         r["hack squats"] = hackSquat
         r["machine hack squat"] = hackSquat
 
+        let pendulumSquat: ActivationMap = [.quads: 1.0, .glutes: 0.5]
+        r["pendulum squat"] = pendulumSquat
+
         let legExtension: ActivationMap = [.quads: 1.0]
         r["leg extension"] = legExtension
         r["leg extensions"] = legExtension
@@ -467,6 +501,9 @@ enum BiomechanicsEngine {
         r["smith machine calf raise"] = calfRaise
         r["donkey calf raise"] = calfRaise
 
+        let legPressCalfRaise: ActivationMap = [.calves: 1.0]
+        r["leg press calf raise"] = legPressCalfRaise
+
         // ═══════════════════════════════════════
         // CORE
         // ═══════════════════════════════════════
@@ -483,6 +520,7 @@ enum BiomechanicsEngine {
         r["plank"] = plank
         r["side plank"] = plank
         r["weighted plank"] = plank
+        r["copenhagen plank"] = [.core: 1.0, .quads: 0.4, .glutes: 0.3]
 
         let legRaise: ActivationMap = [.core: 1.0]
         r["leg raise"] = legRaise

@@ -15,13 +15,17 @@ struct WorkoutSummaryView: View {
 
                 ScrollView {
                     VStack(spacing: Wire.Layout.gap) {
-                        hologramSection
-                        if !viewModel.prSummaries.isEmpty {
-                            prSection
-                        }
-                        insightsSection
-                        if !viewModel.recoveryDeltas.isEmpty {
-                            recoverySection
+                        if viewModel.totalSets == 0 {
+                            emptyState
+                        } else {
+                            hologramSection
+                            if !viewModel.prSummaries.isEmpty {
+                                prSection
+                            }
+                            insightsSection
+                            if !viewModel.recoveryDeltas.isEmpty {
+                                recoverySection
+                            }
                         }
                     }
                     .padding(Wire.Layout.pad)
@@ -102,7 +106,7 @@ struct WorkoutSummaryView: View {
                                 .foregroundColor(Wire.Color.white)
                                 .kerning(1)
 
-                            Text("\(Int(pr.weight)) KG")
+                            Text("\(String(format: "%.1f", pr.weight)) KG")
                                 .font(Wire.Font.caption)
                                 .foregroundColor(Wire.Color.gray)
                         }
@@ -176,7 +180,7 @@ struct WorkoutSummaryView: View {
                 }
                 .frame(height: 4)
 
-                Text("\(viewModel.effectiveSets) OF \(viewModel.totalSets) SETS EFFECTIVE (RPE 8+)")
+                Text("QUALITY SCORE — \(viewModel.effectiveSets) OF \(viewModel.totalSets) SETS")
                     .font(Wire.Font.tiny)
                     .foregroundColor(Wire.Color.gray)
                     .kerning(0.5)
@@ -227,11 +231,12 @@ struct WorkoutSummaryView: View {
 
     private func zoneColor(_ label: String) -> Color {
         switch label {
-        case "WARM-UP":  return Wire.Color.dark
-        case "MODERATE": return Wire.Color.gray
-        case "HARD":     return Wire.Color.white
-        case "MAX":      return Wire.Color.danger
-        default:         return Wire.Color.gray
+        case "WARM-UP":        return Wire.Color.dark
+        case "MODERATE":       return Wire.Color.gray
+        case "HARD":           return Wire.Color.white
+        case "MAX":            return Wire.Color.danger
+        case "RPE NOT LOGGED": return Wire.Color.bone
+        default:               return Wire.Color.gray
         }
     }
 
@@ -244,7 +249,7 @@ struct WorkoutSummaryView: View {
                         .foregroundColor(Wire.Color.gray)
                         .kerning(1)
 
-                    Text("\(Int(viewModel.totalVolume)) KG TOTAL")
+                    Text("\(String(format: "%.1f", viewModel.totalVolume)) KG TOTAL")
                         .font(Wire.Font.tiny)
                         .foregroundColor(Wire.Color.gray)
                 }
@@ -308,6 +313,26 @@ struct WorkoutSummaryView: View {
                     }
                 }
             }
+        }
+    }
+
+    // MARK: - Empty State
+
+    private var emptyState: some View {
+        WireCell {
+            VStack(spacing: Wire.Layout.gap) {
+                Text("NO SETS COMPLETED")
+                    .font(Wire.Font.sub)
+                    .foregroundColor(Wire.Color.white)
+                    .kerning(2)
+
+                Text("Complete at least one set to see your workout summary.")
+                    .font(Wire.Font.caption)
+                    .foregroundColor(Wire.Color.gray)
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, Wire.Layout.pad * 2)
         }
     }
 

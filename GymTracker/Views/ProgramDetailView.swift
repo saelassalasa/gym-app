@@ -32,8 +32,15 @@ struct ProgramDetailView: View {
         .onAppear {
             sortedTemplates = program.orderedTemplates
         }
+        .onChange(of: program.templates?.count) { _, _ in
+            sortedTemplates = program.orderedTemplates
+        }
         .sheet(item: $templateToEdit) { template in
             WorkoutTemplateView(templateToEdit: template)
+                .onDisappear {
+                    // Re-sync after sheet edit so list reflects changes
+                    sortedTemplates = program.orderedTemplates
+                }
         }
     }
     

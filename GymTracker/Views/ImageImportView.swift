@@ -325,6 +325,7 @@ struct ImageImportView: View {
             }
             .onMove { from, to in
                 day.exercises.move(fromOffsets: from, toOffset: to)
+                editableProgram.objectWillChange.send()
             }
         }
         .padding(Wire.Layout.pad)
@@ -336,14 +337,23 @@ struct ImageImportView: View {
     
     private func loadImage(from item: PhotosPickerItem?) {
         guard let item else { return }
-        
+
         Task {
-            if let data = try? await item.loadTransferable(type: Data.self),
-               let image = UIImage(data: data) {
+            do {
+                guard let data = try await item.loadTransferable(type: Data.self) else {
+                    await MainActor.run { errorMessage = "Could not load image data." }
+                    return
+                }
+                guard let image = UIImage(data: data) else {
+                    await MainActor.run { errorMessage = "Invalid image format." }
+                    return
+                }
                 await MainActor.run {
                     selectedImage = image
                     errorMessage = nil
                 }
+            } catch {
+                await MainActor.run { errorMessage = "Photo load failed: \(error.localizedDescription)" }
             }
         }
     }

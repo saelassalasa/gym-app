@@ -84,8 +84,9 @@ final class WorkoutSummaryViewModel {
 
     private func computeEffectiveVolume(_ sets: [WorkoutSet]) {
         var effective = 0.0
-        for s in sets {
-            let rpe = Double(s.rpe ?? 7)
+        let setsWithRPE = sets.filter { ($0.rpe ?? 0) > 0 }
+        for s in setsWithRPE {
+            let rpe = Double(s.rpe!)
             if rpe >= 8 {
                 effective += 1.0
             } else if rpe >= 6 {
@@ -94,16 +95,17 @@ final class WorkoutSummaryViewModel {
                 effective += 0.4
             }
         }
+        let denominator = setsWithRPE.isEmpty ? 1.0 : Double(setsWithRPE.count)
         effectiveSets = Int(effective.rounded())
-        effectivePercent = min(effective / Double(totalSets), 1.0)
+        effectivePercent = min(effective / denominator, 1.0)
     }
 
     // MARK: - Intensity Distribution
 
     private func computeIntensityDistribution(_ sets: [WorkoutSet]) {
-        var warmup = 0, moderate = 0, hard = 0, maxEffort = 0
+        var warmup = 0, moderate = 0, hard = 0, maxEffort = 0, notLogged = 0
         for s in sets {
-            let rpe = s.rpe ?? 7
+            guard let rpe = s.rpe, rpe > 0 else { notLogged += 1; continue }
             switch rpe {
             case ..<6:      warmup += 1
             case 6...7:     moderate += 1
@@ -117,6 +119,7 @@ final class WorkoutSummaryViewModel {
             IntensityZone(label: "MODERATE", count: moderate, fraction: Double(moderate) / total),
             IntensityZone(label: "HARD", count: hard, fraction: Double(hard) / total),
             IntensityZone(label: "MAX", count: maxEffort, fraction: Double(maxEffort) / total),
+            IntensityZone(label: "RPE NOT LOGGED", count: notLogged, fraction: Double(notLogged) / total),
         ]
     }
 
