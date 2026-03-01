@@ -134,7 +134,10 @@ final class WorkoutTemplate {
     var exercises: [Exercise]
     
     var program: WorkoutProgram?
-    
+
+    @Relationship(deleteRule: .noAction)
+    var sessions: [WorkoutSession]? = []
+
     /// Display name like "DAY 1" or custom name
     var displayName: String {
         name.isEmpty ? "DAY \(dayIndex + 1)" : name
@@ -157,8 +160,9 @@ final class WorkoutSession {
     var notes: String
     var isCompleted: Bool
     var progressionApplied: Bool
+    @Relationship(deleteRule: .nullify, inverse: \WorkoutTemplate.sessions)
     var template: WorkoutTemplate?
-    
+
     @Relationship(deleteRule: .cascade, inverse: \WorkoutSet.session)
     var sets: [WorkoutSet]?
     

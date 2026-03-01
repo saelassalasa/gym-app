@@ -252,7 +252,7 @@ struct GenerateProgramView: View {
         template.program = program
         modelContext.insert(program)
         modelContext.insert(template)
-        try? modelContext.save()
+        modelContext.saveSafe()
         dismiss()
     }
 }

@@ -419,7 +419,7 @@ struct ImageImportView: View {
             modelContext.insert(template)
         }
         
-        try? modelContext.save()
+        modelContext.saveSafe()
         dismiss()
     }
     

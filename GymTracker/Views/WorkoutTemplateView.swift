@@ -117,7 +117,7 @@ struct WorkoutTemplateView: View {
             // EDIT MODE: Update existing template
             template.name = templateName
             template.exercises = exercises
-            try? modelContext.save()
+            modelContext.saveSafe()
         } else {
             // NEW MODE: Insert new template
             modelContext.insert(WorkoutTemplate(name: templateName, exercises: exercises))

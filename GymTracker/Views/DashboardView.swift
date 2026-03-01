@@ -123,7 +123,7 @@ struct DashboardView: View {
                     .frame(width: 40, height: 40)
             }
 
-            NavigationLink(destination: ProgressView()) {
+            NavigationLink(destination: ProgressChartView()) {
                 Text("◉")
                     .font(Wire.Font.header)
                     .foregroundColor(Wire.Color.white)
@@ -355,7 +355,7 @@ struct DashboardView: View {
             session.template = nil
         }
         modelContext.delete(template)
-        try? modelContext.save()
+        modelContext.saveSafe()
         templateToDelete = nil
     }
     
@@ -365,7 +365,7 @@ struct DashboardView: View {
         for p in programs {
             p.isActive = (p.id == program.id)
         }
-        try? modelContext.save()
+        modelContext.saveSafe()
     }
     
     private func deleteProgram(_ program: WorkoutProgram) {
@@ -386,7 +386,7 @@ struct DashboardView: View {
             }
         }
         modelContext.delete(program)
-        try? modelContext.save()
+        modelContext.saveSafe()
     }
     
     // MARK: - Actions

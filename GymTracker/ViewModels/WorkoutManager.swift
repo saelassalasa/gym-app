@@ -27,11 +27,17 @@ final class WorkoutManager {
     var showPRBanner: Bool = false
     var lastPRTypes: Set<PRType> = []
 
-    // Timer
+    // Timer — stores end date so background time is automatically handled
     var timerValue: Int = 0
     var isTimerActive: Bool = false
+    private var timerEndDate: Date?
     private var timerCancellable: AnyCancellable?
-    
+
+    // Background tracking for accurate duration
+    private var pausedDuration: TimeInterval = 0
+    private var backgroundEntryDate: Date?
+    private var backgroundObservers: [Any] = []
+
     // Save Guard - prevents multiple saves
     private var isSaving: Bool = false
 
@@ -104,6 +110,7 @@ final class WorkoutManager {
         self.session = newSession
         self._sessionID = newSession.id
         loadExerciseDefaults()
+        registerBackgroundObservers()
     }
     
     // MARK: - Actions
@@ -215,7 +222,8 @@ final class WorkoutManager {
         stopTimer()
 
         session.isCompleted = true
-        session.duration = Date().timeIntervalSince(session.date)
+        // Subtract time spent in background for accurate active duration
+        session.duration = Date().timeIntervalSince(session.date) - pausedDuration
         ProgressionManager.shared.checkAndIncrement(session: session)
         do {
             try context.save()
@@ -229,6 +237,7 @@ final class WorkoutManager {
     /// KILL SWITCH: Incinerate the session and all associated sets
     func abortSession() {
         stopTimer()
+        removeBackgroundObservers()
         context.delete(session)
         do {
             try context.save()
@@ -243,25 +252,34 @@ final class WorkoutManager {
     // MARK: - Timer
     
     func startTimer(seconds: Int) {
+        timerEndDate = Date().addingTimeInterval(Double(seconds))
         timerValue = seconds
         isTimerActive = true
-        
+
         timerCancellable?.cancel()
-        timerCancellable = Timer.publish(every: 1, on: .main, in: .common)
+        timerCancellable = Timer.publish(every: 0.5, on: .main, in: .common)
             .autoconnect()
             .sink { [weak self] _ in
-                guard let self else { return }
-                if self.timerValue > 0 {
-                    self.timerValue -= 1
-                } else {
-                    self.stopTimer()
-                    Wire.success()
-                }
+                self?.tickTimer()
             }
     }
-    
+
+    /// Recompute remaining from timerEndDate — works correctly after background
+    private func tickTimer() {
+        guard let endDate = timerEndDate else { return }
+        let remaining = Int(ceil(endDate.timeIntervalSinceNow))
+        if remaining > 0 {
+            timerValue = remaining
+        } else {
+            timerValue = 0
+            stopTimer()
+            Wire.success()
+        }
+    }
+
     func stopTimer() {
         isTimerActive = false
+        timerEndDate = nil
         timerCancellable?.cancel()
     }
     
@@ -271,5 +289,46 @@ final class WorkoutManager {
         guard let exercise = currentExercise else { return }
         weightInput = exercise.currentWeight
         repsInput = exercise.targetReps
+    }
+
+    // MARK: - Background Tracking
+
+    private func registerBackgroundObservers() {
+        let resignObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willResignActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                self?.backgroundEntryDate = Date()
+            }
+        }
+
+        let activeObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated {
+                guard let self, let entry = self.backgroundEntryDate else { return }
+                self.pausedDuration += Date().timeIntervalSince(entry)
+                self.backgroundEntryDate = nil
+                // Refresh rest timer display immediately on foreground return
+                if self.isTimerActive { self.tickTimer() }
+            }
+        }
+
+        backgroundObservers = [resignObserver, activeObserver]
+    }
+
+    private func removeBackgroundObservers() {
+        for observer in backgroundObservers {
+            NotificationCenter.default.removeObserver(observer)
+        }
+        backgroundObservers = []
+    }
+
+    deinit {
+        MainActor.assumeIsolated {
+            removeBackgroundObservers()
+        }
     }
 }

@@ -54,7 +54,7 @@ enum ExerciseLibrary {
         .init(name: "Decline Bench Press", category: .push, exerciseType: .compound, primaryMuscle: .chest),
         .init(name: "Dumbbell Bench Press", category: .push, exerciseType: .compound, primaryMuscle: .chest),
         .init(name: "Incline Dumbbell Press", category: .push, exerciseType: .compound, primaryMuscle: .chest),
-        .init(name: "Close Grip Bench Press", category: .push, exerciseType: .compound, primaryMuscle: .chest),
+        .init(name: "Close Grip Bench Press", category: .push, exerciseType: .compound, primaryMuscle: .triceps),
         .init(name: "Floor Press", category: .push, exerciseType: .compound, primaryMuscle: .chest),
         .init(name: "Dips", category: .push, exerciseType: .compound, primaryMuscle: .chest),
 
@@ -76,7 +76,6 @@ enum ExerciseLibrary {
         .init(name: "Lateral Raise", category: .push, exerciseType: .accessory, primaryMuscle: .shoulders),
         .init(name: "Cable Lateral Raise", category: .push, exerciseType: .accessory, primaryMuscle: .shoulders),
         .init(name: "Front Raise", category: .push, exerciseType: .accessory, primaryMuscle: .shoulders),
-        .init(name: "Reverse Pec Deck", category: .push, exerciseType: .accessory, primaryMuscle: .shoulders),
         .init(name: "Lu Raise", category: .push, exerciseType: .accessory, primaryMuscle: .shoulders),
 
         // Triceps — Accessory
@@ -109,10 +108,10 @@ enum ExerciseLibrary {
         // Back — Accessory
         .init(name: "Face Pull", category: .pull, exerciseType: .accessory, primaryMuscle: .shoulders),
         .init(name: "Reverse Fly", category: .pull, exerciseType: .accessory, primaryMuscle: .shoulders),
+        .init(name: "Reverse Pec Deck", category: .pull, exerciseType: .accessory, primaryMuscle: .shoulders),
         .init(name: "Straight Arm Pulldown", category: .pull, exerciseType: .accessory, primaryMuscle: .back),
         .init(name: "Pullover", category: .pull, exerciseType: .accessory, primaryMuscle: .back),
         .init(name: "Shrug", category: .pull, exerciseType: .accessory, primaryMuscle: .back),
-        .init(name: "Barbell Shrug", category: .pull, exerciseType: .accessory, primaryMuscle: .back),
 
         // Biceps — Accessory
         .init(name: "Barbell Curl", category: .pull, exerciseType: .accessory, primaryMuscle: .biceps),
@@ -138,7 +137,7 @@ enum ExerciseLibrary {
         .init(name: "Bulgarian Split Squat", category: .legs, exerciseType: .compound, primaryMuscle: .quads),
         .init(name: "Goblet Squat", category: .legs, exerciseType: .compound, primaryMuscle: .quads),
         .init(name: "Walking Lunge", category: .legs, exerciseType: .compound, primaryMuscle: .quads),
-        .init(name: "Sissy Squat", category: .legs, exerciseType: .compound, primaryMuscle: .quads),
+        .init(name: "Sissy Squat", category: .legs, exerciseType: .accessory, primaryMuscle: .quads),
         .init(name: "Pendulum Squat", category: .legs, exerciseType: .compound, primaryMuscle: .quads),
 
         // Quads — Accessory
@@ -158,7 +157,6 @@ enum ExerciseLibrary {
         .init(name: "Deadlift", category: .legs, exerciseType: .compound, primaryMuscle: .glutes),
         .init(name: "Sumo Deadlift", category: .legs, exerciseType: .compound, primaryMuscle: .glutes),
         .init(name: "Deficit Deadlift", category: .legs, exerciseType: .compound, primaryMuscle: .glutes),
-        .init(name: "Hip Thrust", category: .legs, exerciseType: .compound, primaryMuscle: .glutes),
         .init(name: "Barbell Hip Thrust", category: .legs, exerciseType: .compound, primaryMuscle: .glutes),
         .init(name: "Glute Bridge", category: .legs, exerciseType: .accessory, primaryMuscle: .glutes),
 

@@ -1,4 +1,5 @@
 import SwiftUI
+import SwiftData
 
 // MARK: - Debug Logging (compiles out in release)
 func debugLog(_ message: @autoclosure () -> String) {
@@ -352,4 +353,16 @@ struct WireTimer: View {
         .padding(Wire.Layout.pad)
     }
     .background(Wire.Color.black)
+}
+
+// MARK: - ModelContext Safe Save
+
+extension ModelContext {
+    func saveSafe(file: String = #file, line: Int = #line) {
+        do {
+            try save()
+        } catch {
+            debugLog("ModelContext.save failed at \(file):\(line): \(error.localizedDescription)")
+        }
+    }
 }

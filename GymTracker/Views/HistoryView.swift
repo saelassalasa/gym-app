@@ -8,11 +8,12 @@ import SwiftData
 
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
+    @Query(filter: #Predicate<WorkoutSession> { $0.isCompleted }, sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
 
     @State private var sessionToEdit: WorkoutSession?
     @State private var sessionToDelete: WorkoutSession?
     @State private var showDeleteAlert = false
+    @State private var cachedGroupedSessions: [(String, [WorkoutSession])] = []
 
     private static let dateFormatter: DateFormatter = {
         let f = DateFormatter()
@@ -28,12 +29,12 @@ struct HistoryView: View {
         return f
     }()
 
-    private var groupedSessions: [(String, [WorkoutSession])] {
+    private func recomputeGroupedSessions() {
         let calendar = Calendar.current
         let grouped = Dictionary(grouping: sessions) { session in
             calendar.startOfDay(for: session.date)
         }
-        return grouped.sorted { $0.key > $1.key }.map { (key, sessions) in
+        cachedGroupedSessions = grouped.sorted { $0.key > $1.key }.map { (key, sessions) in
             (Self.sectionDateFormatter.string(from: key), sessions)
         }
     }
@@ -70,6 +71,8 @@ struct HistoryView: View {
         .sheet(item: $sessionToEdit) { session in
             SessionEditorView(session: session)
         }
+        .onAppear { recomputeGroupedSessions() }
+        .onChange(of: sessions.count) { recomputeGroupedSessions() }
     }
     
     private var header: some View {
@@ -109,7 +112,7 @@ struct HistoryView: View {
     private var sessionList: some View {
         ScrollView {
             LazyVStack(spacing: 4, pinnedViews: []) {
-                ForEach(groupedSessions, id: \.0) { (dateString, daySessions) in
+                ForEach(cachedGroupedSessions, id: \.0) { (dateString, daySessions) in
                     Section {
                         ForEach(daySessions) { session in
                             sessionRow(session)
@@ -199,7 +202,7 @@ struct HistoryView: View {
     private func deleteSession(_ session: WorkoutSession) {
         Wire.heavy()
         modelContext.delete(session)
-        try? modelContext.save()
+        modelContext.saveSafe()
         sessionToDelete = nil
     }
 }
@@ -301,7 +304,7 @@ struct SessionEditorView: View {
     
     private func save() {
         Wire.heavy()
-        try? modelContext.save()
+        modelContext.saveSafe()
         dismiss()
     }
     

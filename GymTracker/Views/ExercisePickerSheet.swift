@@ -13,6 +13,7 @@ struct ExercisePickerSheet: View {
     @State private var selectedCategories: Set<ExerciseCategory> = []
     @State private var selectedMuscles: Set<MuscleGroup> = []
     @State private var showCustomSheet = false
+    @State private var isAdding = false
 
     private var filteredExercises: [ExerciseTemplate] {
         ExerciseLibrary.filter(
@@ -79,7 +80,7 @@ struct ExercisePickerSheet: View {
             // Category row
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
-                    ForEach([ExerciseCategory.push, .pull, .legs, .core], id: \.self) { cat in
+                    ForEach(ExerciseCategory.allCases, id: \.self) { cat in
                         chipButton(
                             label: cat.rawValue,
                             isSelected: selectedCategories.contains(cat)
@@ -187,6 +188,8 @@ struct ExercisePickerSheet: View {
     // MARK: - Actions
 
     private func addFromTemplate(_ template: ExerciseTemplate) {
+        guard !isAdding else { return }
+        isAdding = true
         Wire.tap()
         let exercise = Exercise(
             name: template.name,

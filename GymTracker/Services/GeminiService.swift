@@ -41,29 +41,43 @@ actor GeminiService {
     
     // MARK: - Parse Workout Image
     
+    /// Max dimension (width or height) before downscaling
+    private let maxImageDimension: CGFloat = 1024
+    /// Max response body size (10 MB)
+    private let maxResponseBytes: Int64 = 10 * 1024 * 1024
+
     func parseWorkoutImage(_ image: UIImage) async throws -> ParsedWorkoutProgram {
         guard let apiKey = GeminiService.apiKey, !apiKey.isEmpty else {
             throw GeminiError.noAPIKey
         }
-        
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else {
+
+        // Downscale large images (e.g. 12 MP) to max 1024px to avoid base64 OOM
+        let scaled = downscaledImage(image)
+
+        guard let imageData = scaled.jpegData(compressionQuality: 0.8) else {
             throw GeminiError.imageConversionFailed
         }
-        
-        let base64Image = imageData.base64EncodedString()
-        
-        let request = try buildRequest(apiKey: apiKey, base64Image: base64Image)
-        
-        let (data, response) = try await URLSession.shared.data(for: request)
 
-        // Cap response size to prevent OOM from malicious/oversized responses
-        let maxBytes = 512 * 1024
-        guard data.count <= maxBytes else {
-            throw GeminiError.parsingFailed("Response too large (\(data.count) bytes)")
-        }
+        let base64Image = imageData.base64EncodedString()
+
+        var request = try buildRequest(apiKey: apiKey, base64Image: base64Image)
+        request.timeoutInterval = 30
+
+        let (data, response) = try await URLSession.shared.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw GeminiError.invalidResponse
+        }
+
+        // Reject oversized responses BEFORE heavy processing
+        if httpResponse.expectedContentLength > 0,
+           httpResponse.expectedContentLength > maxResponseBytes {
+            throw GeminiError.parsingFailed("Response too large (\(httpResponse.expectedContentLength) bytes)")
+        }
+
+        // Secondary guard on actual data size
+        guard data.count <= Int(maxResponseBytes) else {
+            throw GeminiError.parsingFailed("Response too large (\(data.count) bytes)")
         }
 
         guard httpResponse.statusCode == 200 else {
@@ -71,6 +85,23 @@ actor GeminiService {
         }
 
         return try parseResponse(data)
+    }
+
+    // MARK: - Image Downscaling
+
+    /// Proportionally downscales an image so neither dimension exceeds `maxImageDimension`.
+    private func downscaledImage(_ image: UIImage) -> UIImage {
+        let size = image.size
+        guard size.width > maxImageDimension || size.height > maxImageDimension else { return image }
+
+        let scale = min(maxImageDimension / size.width, maxImageDimension / size.height)
+        let newSize = CGSize(width: (size.width * scale).rounded(.down),
+                             height: (size.height * scale).rounded(.down))
+
+        let renderer = UIGraphicsImageRenderer(size: newSize)
+        return renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: newSize))
+        }
     }
     
     // MARK: - Request Building

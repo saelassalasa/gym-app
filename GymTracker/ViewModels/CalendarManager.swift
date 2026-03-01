@@ -17,7 +17,12 @@ final class CalendarManager {
 
     private(set) var hasAccess = false
     private(set) var scheduledDates: Set<Date> = []
-    
+
+    /// Live authorization check — catches mid-session revocations
+    private var isAuthorized: Bool {
+        EKEventStore.authorizationStatus(for: .event) == .fullAccess
+    }
+
     private init() {}
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -25,34 +30,39 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func requestAccess() async -> Bool {
-        do {
-            if #available(iOS 17.0, *) {
-                hasAccess = try await eventStore.requestFullAccessToEvents()
-            } else {
-                hasAccess = try await eventStore.requestAccess(to: .event)
+        // Check live status first — catches mid-session revocations
+        guard isAuthorized else {
+            do {
+                if #available(iOS 17.0, *) {
+                    hasAccess = try await eventStore.requestFullAccessToEvents()
+                } else {
+                    hasAccess = try await eventStore.requestAccess(to: .event)
+                }
+                debugLog("📅 Calendar access: \(hasAccess ? "GRANTED" : "DENIED")")
+                return hasAccess
+            } catch {
+                debugLog("❌ Calendar access error: \(error)")
+                hasAccess = false
+                return false
             }
-            debugLog("📅 Calendar access: \(hasAccess ? "GRANTED" : "DENIED")")
-            return hasAccess
-        } catch {
-            debugLog("❌ Calendar access error: \(error)")
-            hasAccess = false
-            return false
         }
+        hasAccess = true
+        return true
     }
     
     // ═══════════════════════════════════════════════════════════════════════
     // SCHEDULE WORKOUT
     // ═══════════════════════════════════════════════════════════════════════
     
-    func scheduleWorkout(templateName: String, date: Date, durationMinutes: Int = 90) async -> Bool {
-        // Ensure we have access
-        if !hasAccess {
-            let granted = await requestAccess()
-            if !granted {
-                debugLog("❌ Cannot schedule: No calendar access")
-                return false
-            }
+    /// If `commit` is true, commits immediately. Pass false when batching.
+    func scheduleWorkout(templateName: String, date: Date, durationMinutes: Int = 90, commit: Bool = true) async -> Bool {
+        // Live authorization check — catches mid-session revocations
+        guard isAuthorized else {
+            hasAccess = false
+            debugLog("❌ Cannot schedule: Calendar access revoked")
+            return false
         }
+        hasAccess = true
         
         // Get a writable calendar
         guard let calendar = eventStore.defaultCalendarForNewEvents else {
@@ -73,13 +83,13 @@ final class CalendarManager {
         
         // Save the event
         do {
-            try eventStore.save(event, span: .thisEvent, commit: true)
+            try eventStore.save(event, span: .thisEvent, commit: commit)
             debugLog("✅ Event saved: \(event.title ?? "Unknown") at \(date)")
-            
+
             // Update local cache
             let dayStart = Calendar.current.startOfDay(for: date)
             scheduledDates.insert(dayStart)
-            
+
             return true
         } catch {
             debugLog("❌ Failed to save event: \(error)")
@@ -92,35 +102,39 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func fetchScheduledDates(for month: Date) async {
-        if !hasAccess {
-            _ = await requestAccess()
-        }
-        
-        guard hasAccess else {
-            debugLog("⚠️ Cannot fetch: No calendar access")
+        guard isAuthorized else {
+            hasAccess = false
+            debugLog("⚠️ Cannot fetch: Calendar access revoked")
             return
         }
-        
+        hasAccess = true
+
         let calendar = Calendar.current
         guard let monthInterval = calendar.dateInterval(of: .month, for: month) else {
             return
         }
-        
+
         // Buffer: ±1 month
         let start = calendar.date(byAdding: .month, value: -1, to: monthInterval.start) ?? monthInterval.start
         let end = calendar.date(byAdding: .month, value: 1, to: monthInterval.end) ?? monthInterval.end
-        
+
         let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
-        let events = eventStore.events(matching: predicate)
-        
-        var scheduled: Set<Date> = []
-        for event in events {
-            if event.title?.hasPrefix(eventPrefix) == true {
-                let dayStart = calendar.startOfDay(for: event.startDate)
-                scheduled.insert(dayStart)
+        let prefix = eventPrefix
+
+        // Bug fix: dispatch synchronous events(matching:) off MainActor
+        let store = eventStore
+        let scheduled: Set<Date> = await Task.detached {
+            let events = store.events(matching: predicate)
+            var dates: Set<Date> = []
+            for event in events {
+                if event.title?.hasPrefix(prefix) == true {
+                    let dayStart = calendar.startOfDay(for: event.startDate)
+                    dates.insert(dayStart)
+                }
             }
-        }
-        
+            return dates
+        }.value
+
         scheduledDates = scheduled
         debugLog("📅 Fetched \(scheduled.count) scheduled workouts")
     }
@@ -130,30 +144,40 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func deleteScheduledWorkout(on date: Date) async -> Bool {
-        guard hasAccess else { return false }
-        
+        guard isAuthorized else {
+            hasAccess = false
+            return false
+        }
+        hasAccess = true
+
         let calendar = Calendar.current
         let dayStart = calendar.startOfDay(for: date)
         let dayEnd = calendar.date(byAdding: .day, value: 1, to: dayStart) ?? dayStart
-        
+
         let predicate = eventStore.predicateForEvents(withStart: dayStart, end: dayEnd, calendars: nil)
         let events = eventStore.events(matching: predicate)
-        
+
         var deletedSomething = false
         for event in events where event.title?.hasPrefix(eventPrefix) == true {
             do {
-                try eventStore.remove(event, span: .thisEvent, commit: true)
+                try eventStore.remove(event, span: .thisEvent, commit: false)
                 debugLog("🗑️ Deleted event: \(event.title ?? "Unknown")")
                 deletedSomething = true
             } catch {
                 debugLog("❌ Failed to delete: \(error)")
             }
         }
-        
+
         if deletedSomething {
+            do {
+                try eventStore.commit()
+            } catch {
+                debugLog("❌ Failed to commit deletes: \(error)")
+                return false
+            }
             scheduledDates.remove(dayStart)
         }
-        
+
         return deletedSomething
     }
     
@@ -172,14 +196,13 @@ final class CalendarManager {
         defaultHour: Int = 9
     ) async -> Int {
         guard !pattern.isEmpty else { return 0 }
-        
-        if !hasAccess {
-            _ = await requestAccess()
-        }
-        guard hasAccess else {
-            debugLog("❌ Cannot deploy routine: No calendar access")
+
+        guard isAuthorized else {
+            hasAccess = false
+            debugLog("❌ Cannot deploy routine: Calendar access revoked")
             return 0
         }
+        hasAccess = true
         
         let calendar = Calendar.current
         var scheduledCount = 0
@@ -218,18 +241,29 @@ final class CalendarManager {
             components.minute = 0
             let scheduledTime = calendar.date(from: components) ?? targetDate
             
-            // Schedule the workout
+            // Schedule the workout (no individual commit)
             let success = await scheduleWorkout(
                 templateName: templateName,
-                date: scheduledTime
+                date: scheduledTime,
+                commit: false
             )
-            
+
             if success {
                 scheduledCount += 1
                 debugLog("✅ Day \(dayOffset + 1): Scheduled \(templateName)")
             }
         }
-        
+
+        // Single batch commit for all events
+        if scheduledCount > 0 {
+            do {
+                try eventStore.commit()
+            } catch {
+                debugLog("❌ Failed to commit routine: \(error)")
+                return 0
+            }
+        }
+
         debugLog("🎯 AUTOPILOT COMPLETE: Scheduled \(scheduledCount) workouts")
         return scheduledCount
     }
@@ -250,14 +284,13 @@ final class CalendarManager {
         defaultHour: Int = 9
     ) async -> Int {
         guard !templates.isEmpty, !weekdays.isEmpty else { return 0 }
-        
-        if !hasAccess {
-            _ = await requestAccess()
-        }
-        guard hasAccess else {
-            debugLog("❌ Cannot deploy program: No calendar access")
+
+        guard isAuthorized else {
+            hasAccess = false
+            debugLog("❌ Cannot deploy program: Calendar access revoked")
             return 0
         }
+        hasAccess = true
         
         let calendar = Calendar.current
         let sortedTemplates = templates.sorted { $0.dayIndex < $1.dayIndex }
@@ -291,9 +324,10 @@ final class CalendarManager {
                     
                     let success = await scheduleWorkout(
                         templateName: template.name,
-                        date: scheduledTime
+                        date: scheduledTime,
+                        commit: false
                     )
-                    
+
                     if success {
                         scheduledCount += 1
                         currentTemplateIndex += 1
@@ -301,11 +335,21 @@ final class CalendarManager {
                     }
                 }
             }
-            
+
             // Move to next day
             currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? endDate
         }
-        
+
+        // Single batch commit for all events
+        if scheduledCount > 0 {
+            do {
+                try eventStore.commit()
+            } catch {
+                debugLog("❌ Failed to commit program: \(error)")
+                return 0
+            }
+        }
+
         debugLog("🎯 AUTOPILOT COMPLETE: Scheduled \\(scheduledCount) workouts from \\(sortedTemplates.count)-day program")
         return scheduledCount
     }
@@ -315,29 +359,43 @@ final class CalendarManager {
     // ═══════════════════════════════════════════════════════════════════════
     
     func purgeFutureEvents() async -> Int {
-        guard hasAccess else { return 0 }
-        
+        guard isAuthorized else {
+            hasAccess = false
+            return 0
+        }
+        hasAccess = true
+
         let calendar = Calendar.current
         let now = Date()
         let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now)) ?? now
         let farFuture = calendar.date(byAdding: .month, value: 12, to: tomorrow) ?? tomorrow
-        
+
         let predicate = eventStore.predicateForEvents(withStart: tomorrow, end: farFuture, calendars: nil)
         let events = eventStore.events(matching: predicate)
-        
+
         var deletedCount = 0
         for event in events where event.title?.hasPrefix(eventPrefix) == true {
             do {
-                try eventStore.remove(event, span: .thisEvent, commit: true)
+                try eventStore.remove(event, span: .thisEvent, commit: false)
                 deletedCount += 1
             } catch {
                 debugLog("❌ Failed to purge event: \(error)")
             }
         }
-        
-        // Refresh local cache (crude but effective)
+
+        // Single batch commit
+        if deletedCount > 0 {
+            do {
+                try eventStore.commit()
+            } catch {
+                debugLog("❌ Failed to commit purge: \(error)")
+                return 0
+            }
+        }
+
+        // Refresh local cache
         await fetchScheduledDates(for: now)
-        
+
         debugLog("☢️ PURGED \(deletedCount) future events from calendar")
         return deletedCount
     }

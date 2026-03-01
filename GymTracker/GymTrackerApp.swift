@@ -85,7 +85,7 @@ struct GymTrackerApp: App {
         context.insert(pushTemplate)
         context.insert(pullB)
         context.insert(pullTemplate)
-        try? context.save()
+        context.saveSafe()
     }
 
     @MainActor
@@ -100,7 +100,7 @@ struct GymTrackerApp: App {
             session.duration = 0
             session.notes = "[RECOVERED]"
         }
-        try? context.save()
+        context.saveSafe()
         debugLog("Cleaned \(orphans.count) orphan session(s)")
     }
 }
@@ -122,7 +122,9 @@ struct MainTabView: View {
                 }
                 .tag(0)
             
-            PlanView()
+            NavigationStack {
+                    PlanView()
+                }
                 .tabItem {
                     Image(systemName: "calendar")
                     Text("GRID")
@@ -136,7 +138,9 @@ struct MainTabView: View {
                 }
                 .tag(2)
             
-            ProgressView()
+            NavigationStack {
+                    ProgressChartView()
+                }
                 .tabItem {
                     Image(systemName: "chart.line.uptrend.xyaxis")
                     Text("STATS")

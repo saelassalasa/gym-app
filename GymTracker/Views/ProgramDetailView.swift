@@ -123,6 +123,6 @@ struct ProgramDetailView: View {
         for (index, template) in sortedTemplates.enumerated() {
             template.dayIndex = index
         }
-        try? modelContext.save()
+        modelContext.saveSafe()
     }
 }

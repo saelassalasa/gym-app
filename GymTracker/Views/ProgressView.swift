@@ -7,7 +7,7 @@ import Charts
 // Wireframe charts. Minimal decoration.
 // ═══════════════════════════════════════════════════════════════════════════
 
-struct ProgressView: View {
+struct ProgressChartView: View {
     @Query private var exercises: [Exercise]
     @Query(sort: \WorkoutSession.date, order: .forward) private var sessions: [WorkoutSession]
     @State private var selectedName: String?
@@ -252,9 +252,9 @@ struct ProgressView: View {
         let lowered = name.lowercased()
         var points: [DataPoint] = []
 
-        for session in sessions {
+        for session in sessions where session.isCompleted {
             guard let sets = session.sets else { continue }
-            let matchingSets = sets.filter { $0.exercise?.name.lowercased() == lowered }
+            let matchingSets = sets.filter { $0.exercise?.name.lowercased() == lowered && $0.isCompleted && !$0.isSkipped }
             guard !matchingSets.isEmpty else { continue }
 
             let maxWeight = matchingSets.map(\.weight).max() ?? 0
