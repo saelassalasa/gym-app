@@ -10,23 +10,32 @@ actor GeminiService {
     private let baseURL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
     
     // MARK: - API Key Management
-    
-    var apiKey: String? {
-        UserDefaults.standard.string(forKey: "gemini_api_key")
+
+    static var apiKey: String? {
+        get {
+            if let key = KeychainManager.get(forKey: "gemini_api_key") { return key }
+            // One-time migration from UserDefaults
+            if let legacy = UserDefaults.standard.string(forKey: "gemini_api_key"), !legacy.isEmpty {
+                KeychainManager.set(legacy, forKey: "gemini_api_key")
+                UserDefaults.standard.removeObject(forKey: "gemini_api_key")
+                return legacy
+            }
+            return nil
+        }
+        set {
+            if let val = newValue { KeychainManager.set(val, forKey: "gemini_api_key") }
+            else { KeychainManager.delete(forKey: "gemini_api_key") }
+        }
     }
-    
-    static func setAPIKey(_ key: String) {
-        UserDefaults.standard.set(key, forKey: "gemini_api_key")
-    }
-    
+
     static func hasAPIKey() -> Bool {
-        UserDefaults.standard.string(forKey: "gemini_api_key")?.isEmpty == false
+        apiKey?.isEmpty == false
     }
     
     // MARK: - Parse Workout Image
     
     func parseWorkoutImage(_ image: UIImage) async throws -> ParsedWorkoutProgram {
-        guard let apiKey = apiKey, !apiKey.isEmpty else {
+        guard let apiKey = GeminiService.apiKey, !apiKey.isEmpty else {
             throw GeminiError.noAPIKey
         }
         

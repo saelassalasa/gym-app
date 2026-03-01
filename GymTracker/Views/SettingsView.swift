@@ -22,7 +22,7 @@ struct SettingsView: View {
     @State private var showFinalConfirmation = false
     
     // API Key state
-    @State private var apiKeyInput: String = UserDefaults.standard.string(forKey: "gemini_api_key") ?? ""
+    @State private var apiKeyInput: String = GeminiService.apiKey ?? ""
     
     var body: some View {
         ZStack {
@@ -115,7 +115,7 @@ struct SettingsView: View {
                 
                 Button {
                     Wire.tap()
-                    GeminiService.setAPIKey(apiKeyInput)
+                    GeminiService.apiKey = apiKeyInput
                 } label: {
                     Text(GeminiService.hasAPIKey() ? "✓" : "SAVE")
                         .font(Wire.Font.caption)
