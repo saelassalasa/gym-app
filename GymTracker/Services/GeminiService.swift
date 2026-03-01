@@ -11,7 +11,7 @@ actor GeminiService {
     
     // MARK: - API Key Management
 
-    static var apiKey: String? {
+    nonisolated(unsafe) static var apiKey: String? {
         get {
             if let key = KeychainManager.get(forKey: "gemini_api_key") { return key }
             // One-time migration from UserDefaults
