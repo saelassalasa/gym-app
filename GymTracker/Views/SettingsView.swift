@@ -22,6 +22,8 @@ struct SettingsView: View {
     @State private var showHistoryWipeAlert = false
     @State private var showFinalConfirmation = false
     @State private var wipeErrorMessage: String?
+    @State private var showNukeAlert = false
+    @State private var showNukeFinalConfirmation = false
     
     // API Key state
     @State private var apiKeyInput: String = GeminiService.apiKey ?? ""
@@ -86,6 +88,24 @@ struct SettingsView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(wipeErrorMessage ?? "Unknown error")
+        }
+        // Alert 5: Nuclear Reset - First Confirmation
+        .alert("NUCLEAR RESET?", isPresented: $showNukeAlert) {
+            Button("PROCEED TO FINAL CHECK", role: .destructive) {
+                showNukeFinalConfirmation = true
+            }
+            Button("CANCEL", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete ALL data: \(allSessions.count) sessions, \(allPrograms.count) programs, all exercises, and all calendar events.")
+        }
+        // Alert 6: Nuclear Reset - FINAL Confirmation
+        .alert("⚠️ FINAL CONFIRMATION", isPresented: $showNukeFinalConfirmation) {
+            Button("NUKE EVERYTHING", role: .destructive) {
+                nukeAllData()
+            }
+            Button("ABORT", role: .cancel) {}
+        } message: {
+            Text("LAST CHANCE. ALL data will be permanently destroyed. Default programs will be restored on next launch.")
         }
     }
     
@@ -199,6 +219,22 @@ struct SettingsView: View {
                 .overlay(Rectangle().stroke(allSessions.isEmpty ? Wire.Color.dark : Wire.Color.danger, lineWidth: Wire.Layout.border))
             }
             .disabled(allSessions.isEmpty)
+
+            Button {
+                Wire.heavy()
+                showNukeAlert = true
+            } label: {
+                HStack {
+                    Text("[ NUCLEAR RESET ]")
+                    Spacer()
+                    Text("ALL")
+                }
+                .font(Wire.Font.body)
+                .foregroundColor(Wire.Color.danger)
+                .padding(Wire.Layout.pad)
+                .background(Wire.Color.black)
+                .overlay(Rectangle().stroke(Wire.Color.danger, lineWidth: Wire.Layout.border))
+            }
         }
     }
     
@@ -213,6 +249,48 @@ struct SettingsView: View {
         }
     }
     
+    private func nukeAllData() {
+        debugLog("☢️ NUCLEAR RESET: Destroying all data...")
+        Wire.heavy()
+
+        // Delete all sessions (cascade deletes sets)
+        for session in allSessions {
+            modelContext.delete(session)
+        }
+
+        // Delete all programs (cascade deletes templates)
+        for program in allPrograms {
+            modelContext.delete(program)
+        }
+
+        // Delete any remaining exercises not covered by cascades
+        do {
+            let exercises = try modelContext.fetch(FetchDescriptor<Exercise>())
+            for exercise in exercises {
+                modelContext.delete(exercise)
+            }
+        } catch {
+            debugLog("⚠️ Exercise fetch failed: \(error)")
+        }
+
+        // Purge calendar events
+        Task {
+            let count = await calendarManager.purgeFutureEvents()
+            debugLog("☢️ Purged \(count) calendar events")
+        }
+
+        // Save
+        do {
+            try modelContext.save()
+            debugLog("✅ NUCLEAR RESET COMPLETE: All data destroyed")
+            Wire.success()
+            dismiss()
+        } catch {
+            debugLog("❌ NUCLEAR RESET FAILED: \(error)")
+            wipeErrorMessage = "Nuclear reset failed: \(error.localizedDescription)"
+        }
+    }
+
     private func wipeHistory() {
         debugLog("🧹 WIPE HISTORY: Starting deletion of \(allSessions.count) sessions...")
         Wire.heavy()

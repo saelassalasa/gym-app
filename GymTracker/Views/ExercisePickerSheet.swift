@@ -3,6 +3,7 @@ import SwiftUI
 // ═══════════════════════════════════════════════════════════════════════════
 // EXERCISE PICKER SHEET
 // Searchable exercise library with category/muscle filters.
+// Multi-select: tap exercises to toggle, then batch-add with bottom button.
 // ═══════════════════════════════════════════════════════════════════════════
 
 struct ExercisePickerSheet: View {
@@ -14,6 +15,7 @@ struct ExercisePickerSheet: View {
     @State private var selectedMuscles: Set<MuscleGroup> = []
     @State private var showCustomSheet = false
     @State private var isAdding = false
+    @State private var selectedTemplates: Set<UUID> = []
 
     private var filteredExercises: [ExerciseTemplate] {
         ExerciseLibrary.filter(
@@ -32,6 +34,10 @@ struct ExercisePickerSheet: View {
                 searchBar
                 filterChips
                 resultsList
+
+                if !selectedTemplates.isEmpty {
+                    addSelectedButton
+                }
             }
         }
         .onAppear { isAdding = false }
@@ -44,10 +50,19 @@ struct ExercisePickerSheet: View {
 
     private var header: some View {
         HStack {
-            Text("ADD EXERCISE")
-                .font(Wire.Font.sub)
-                .foregroundColor(Wire.Color.white)
-                .kerning(2)
+            HStack(spacing: 6) {
+                Text("ADD EXERCISE")
+                    .font(Wire.Font.sub)
+                    .foregroundColor(Wire.Color.white)
+                    .kerning(2)
+
+                if !selectedTemplates.isEmpty {
+                    Text("[\(selectedTemplates.count)]")
+                        .font(Wire.Font.sub)
+                        .foregroundColor(Wire.Color.white)
+                        .kerning(1)
+                }
+            }
             Spacer()
             Button("×") { dismiss() }
                 .font(Wire.Font.header)
@@ -127,7 +142,7 @@ struct ExercisePickerSheet: View {
                 ForEach(filteredExercises) { template in
                     Button {
                         Wire.tap()
-                        addFromTemplate(template)
+                        toggleSelection(template)
                     } label: {
                         exerciseRow(template)
                     }
@@ -157,21 +172,41 @@ struct ExercisePickerSheet: View {
         }
     }
 
+    // MARK: - Add Selected Button
+
+    private var addSelectedButton: some View {
+        WireButton("ADD \(selectedTemplates.count) EXERCISE\(selectedTemplates.count > 1 ? "S" : "")", inverted: true) {
+            addSelectedExercises()
+        }
+        .padding(Wire.Layout.pad)
+    }
+
     // MARK: - Components
 
     private func exerciseRow(_ template: ExerciseTemplate) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text(template.name.uppercased())
+        let isSelected = selectedTemplates.contains(template.id)
+
+        return HStack(spacing: Wire.Layout.gap) {
+            Text(isSelected ? "[x]" : "[ ]")
                 .font(Wire.Font.body)
-                .foregroundColor(Wire.Color.white)
-                .kerning(1)
-            Text("\(template.category.rawValue) · \(template.primaryMuscle.rawValue.uppercased()) · \(template.exerciseType.rawValue)")
-                .font(Wire.Font.tiny)
-                .foregroundColor(Wire.Color.gray)
+                .foregroundColor(isSelected ? Wire.Color.white : Wire.Color.dark)
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(template.name.uppercased())
+                    .font(Wire.Font.body)
+                    .foregroundColor(Wire.Color.white)
+                    .kerning(1)
+                Text("\(template.category.rawValue) · \(template.primaryMuscle.rawValue.uppercased()) · \(template.exerciseType.rawValue)")
+                    .font(Wire.Font.tiny)
+                    .foregroundColor(Wire.Color.gray)
+            }
+
+            Spacer()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(Wire.Layout.pad)
-        .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
+        .background(isSelected ? Wire.Color.dark : Wire.Color.black)
+        .overlay(Rectangle().stroke(isSelected ? Wire.Color.white : Wire.Color.dark, lineWidth: Wire.Layout.border))
     }
 
     private func chipButton(label: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
@@ -190,17 +225,31 @@ struct ExercisePickerSheet: View {
 
     // MARK: - Actions
 
-    private func addFromTemplate(_ template: ExerciseTemplate) {
+    private func toggleSelection(_ template: ExerciseTemplate) {
+        if selectedTemplates.contains(template.id) {
+            selectedTemplates.remove(template.id)
+        } else {
+            selectedTemplates.insert(template.id)
+        }
+    }
+
+    private func addSelectedExercises() {
         guard !isAdding else { return }
         isAdding = true
-        Wire.tap()
-        let exercise = Exercise(
-            name: template.name,
-            category: template.category,
-            exerciseType: template.exerciseType,
-            primaryMuscle: template.primaryMuscle
-        )
-        exercises.append(exercise)
+        Wire.heavy()
+
+        let allTemplates = ExerciseLibrary.all
+        let toAdd = allTemplates.filter { selectedTemplates.contains($0.id) }
+
+        for template in toAdd {
+            exercises.append(Exercise(
+                name: template.name,
+                category: template.category,
+                exerciseType: template.exerciseType,
+                primaryMuscle: template.primaryMuscle
+            ))
+        }
+
         dismiss()
     }
 }

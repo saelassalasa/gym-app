@@ -53,6 +53,11 @@ struct DashboardView: View {
                                 RecoveryStripView()
                             }
 
+                            // Weekly Frequency Strip
+                            NavigationLink(destination: FrequencyTrackerView()) {
+                                FrequencyStripView()
+                            }
+
                             if let next = nextTemplate {
                                 missionCard(next)
                             }
