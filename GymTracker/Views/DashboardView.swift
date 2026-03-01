@@ -386,7 +386,7 @@ struct DashboardView: View {
     
     private func startWorkout(template: WorkoutTemplate) {
         Wire.heavy()
-        let manager = WorkoutManager(template: template, context: modelContext)
+        let manager = WorkoutManager(template: template, container: modelContext.container)
         activeManager = manager
     }
     

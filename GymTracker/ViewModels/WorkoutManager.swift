@@ -12,6 +12,7 @@ final class WorkoutManager {
     
     // MARK: - State
     private(set) var session: WorkoutSession
+    private let container: ModelContainer
     private let context: ModelContext
     var summaryContext: ModelContext { context }
     
@@ -72,15 +73,22 @@ final class WorkoutManager {
     
     // MARK: - Init
     
-    init(template: WorkoutTemplate, context: ModelContext) {
-        self.context = context
-        
+    init(template: WorkoutTemplate, container: ModelContainer) {
+        self.container = container
+        self.context = ModelContext(container)
+        context.autosaveEnabled = false
+
+        // Re-fetch template in child context to avoid cross-context references
+        let templateID = template.id
+        let descriptor = FetchDescriptor<WorkoutTemplate>(predicate: #Predicate { $0.id == templateID })
+        let localTemplate = (try? context.fetch(descriptor))?.first ?? template
+
         // Create session ONCE and persist immediately
-        let newSession = WorkoutSession(template: template)
+        let newSession = WorkoutSession(template: localTemplate)
         newSession.sets = []
         context.insert(newSession)
         try? context.save()
-        
+
         self.session = newSession
         loadExerciseDefaults()
     }
