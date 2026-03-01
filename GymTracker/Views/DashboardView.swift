@@ -369,6 +369,13 @@ struct DashboardView: View {
     }
     
     private func deleteProgram(_ program: WorkoutProgram) {
+        // Block deletion if an active workout uses a template from this program
+        if let manager = activeManager,
+           let activeTemplate = manager.session.template,
+           (program.templates ?? []).contains(where: { $0.id == activeTemplate.id }) {
+            Wire.heavy()
+            return
+        }
         Wire.heavy()
         // Nullify session references BEFORE cascade deletes the templates,
         // otherwise sessions hold dangling refs to invalidated objects.
