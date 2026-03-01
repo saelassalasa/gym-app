@@ -402,6 +402,11 @@ struct ImageImportView: View {
                     targetReps: editableExercise.reps,
                     targetSets: editableExercise.sets
                 )
+                // Resolve primaryMuscle from BiomechanicsEngine registry
+                let activations = BiomechanicsEngine.muscleActivation(for: exercise)
+                if let topMuscle = activations.max(by: { $0.value < $1.value })?.key {
+                    exercise.primaryMuscle = topMuscle
+                }
                 exercises.append(exercise)
             }
             
