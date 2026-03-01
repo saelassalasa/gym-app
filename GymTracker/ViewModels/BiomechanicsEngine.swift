@@ -190,7 +190,7 @@ enum BiomechanicsEngine {
         r["bent over raise"] = rearDelt
         r["face pull"] = [.shoulders: 0.8, .back: 0.4, .biceps: 0.3]
 
-        let shrug: ActivationMap = [.shoulders: 0.7, .back: 0.5]
+        let shrug: ActivationMap = [.back: 1.0, .shoulders: 0.3]
         r["shrug"] = shrug
         r["shrugs"] = shrug
         r["barbell shrug"] = shrug

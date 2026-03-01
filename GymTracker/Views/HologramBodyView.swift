@@ -249,8 +249,8 @@ enum HologramBodyBuilder {
     private static func applyHologramMaterial(scene: SCNScene, muscleVolumes: [MuscleGroup: Double]) {
         let mat = SCNMaterial()
         mat.lightingModel = .constant
-        mat.isDoubleSided = true
-        mat.blendMode = .add
+        mat.isDoubleSided = false
+        mat.blendMode = .alpha
         mat.writesToDepthBuffer = false
         mat.diffuse.contents = UIColor.white
         mat.transparent.contents = UIColor.white
