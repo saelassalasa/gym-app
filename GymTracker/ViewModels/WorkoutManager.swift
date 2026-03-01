@@ -32,6 +32,9 @@ final class WorkoutManager {
     
     // Save Guard - prevents multiple saves
     private var isSaving: Bool = false
+
+    // Validation feedback
+    var validationError: String? = nil
     
     // MARK: - Computed
     
@@ -86,7 +89,13 @@ final class WorkoutManager {
     
     func logSet() {
         guard !isSaving else { return }
-        guard weightInput > 0, repsInput > 0, let exercise = currentExercise else { return }
+        guard weightInput > 0 else {
+            Wire.heavy()
+            validationError = "ENTER WEIGHT"
+            return
+        }
+        guard repsInput > 0, let exercise = currentExercise else { return }
+        validationError = nil
 
         isSaving = true
         defer { isSaving = false }
@@ -114,7 +123,7 @@ final class WorkoutManager {
         do {
             try context.save()
         } catch {
-            print("[ERROR] Save failed: \(error)")
+            debugLog("[ERROR] Save failed: \(error)")
         }
 
         // Store PR results and trigger banner
@@ -154,7 +163,7 @@ final class WorkoutManager {
         do {
             try context.save()
         } catch {
-            print("[ERROR] Skip save failed: \(error)")
+            debugLog("[ERROR] Skip save failed: \(error)")
         }
         
         Wire.tap()

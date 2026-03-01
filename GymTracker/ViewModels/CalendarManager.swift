@@ -31,10 +31,10 @@ final class CalendarManager {
             } else {
                 hasAccess = try await eventStore.requestAccess(to: .event)
             }
-            print("📅 Calendar access: \(hasAccess ? "GRANTED" : "DENIED")")
+            debugLog("📅 Calendar access: \(hasAccess ? "GRANTED" : "DENIED")")
             return hasAccess
         } catch {
-            print("❌ Calendar access error: \(error)")
+            debugLog("❌ Calendar access error: \(error)")
             hasAccess = false
             return false
         }
@@ -49,14 +49,14 @@ final class CalendarManager {
         if !hasAccess {
             let granted = await requestAccess()
             if !granted {
-                print("❌ Cannot schedule: No calendar access")
+                debugLog("❌ Cannot schedule: No calendar access")
                 return false
             }
         }
         
         // Get a writable calendar
         guard let calendar = eventStore.defaultCalendarForNewEvents else {
-            print("❌ No default calendar available")
+            debugLog("❌ No default calendar available")
             return false
         }
         
@@ -74,7 +74,7 @@ final class CalendarManager {
         // Save the event
         do {
             try eventStore.save(event, span: .thisEvent, commit: true)
-            print("✅ Event saved: \(event.title ?? "Unknown") at \(date)")
+            debugLog("✅ Event saved: \(event.title ?? "Unknown") at \(date)")
             
             // Update local cache
             let dayStart = Calendar.current.startOfDay(for: date)
@@ -82,7 +82,7 @@ final class CalendarManager {
             
             return true
         } catch {
-            print("❌ Failed to save event: \(error)")
+            debugLog("❌ Failed to save event: \(error)")
             return false
         }
     }
@@ -97,7 +97,7 @@ final class CalendarManager {
         }
         
         guard hasAccess else {
-            print("⚠️ Cannot fetch: No calendar access")
+            debugLog("⚠️ Cannot fetch: No calendar access")
             return
         }
         
@@ -122,7 +122,7 @@ final class CalendarManager {
         }
         
         scheduledDates = scheduled
-        print("📅 Fetched \(scheduled.count) scheduled workouts")
+        debugLog("📅 Fetched \(scheduled.count) scheduled workouts")
     }
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -143,10 +143,10 @@ final class CalendarManager {
         for event in events where event.title?.hasPrefix(eventPrefix) == true {
             do {
                 try eventStore.remove(event, span: .thisEvent, commit: true)
-                print("🗑️ Deleted event: \(event.title ?? "Unknown")")
+                debugLog("🗑️ Deleted event: \(event.title ?? "Unknown")")
                 deletedSomething = true
             } catch {
-                print("❌ Failed to delete: \(error)")
+                debugLog("❌ Failed to delete: \(error)")
             }
         }
         
@@ -177,7 +177,7 @@ final class CalendarManager {
             _ = await requestAccess()
         }
         guard hasAccess else {
-            print("❌ Cannot deploy routine: No calendar access")
+            debugLog("❌ Cannot deploy routine: No calendar access")
             return 0
         }
         
@@ -195,7 +195,7 @@ final class CalendarManager {
             
             // Skip rest days (nil in pattern)
             guard let templateName = pattern[patternIndex] else {
-                print("📅 Day \(dayOffset + 1): REST")
+                debugLog("📅 Day \(dayOffset + 1): REST")
                 continue
             }
             
@@ -208,7 +208,7 @@ final class CalendarManager {
             
             // Skip if already scheduled (no double booking)
             if scheduledDates.contains(dayStart) {
-                print("⏭️ Day \(dayOffset + 1): Already scheduled, skipping")
+                debugLog("⏭️ Day \(dayOffset + 1): Already scheduled, skipping")
                 continue
             }
             
@@ -226,11 +226,11 @@ final class CalendarManager {
             
             if success {
                 scheduledCount += 1
-                print("✅ Day \(dayOffset + 1): Scheduled \(templateName)")
+                debugLog("✅ Day \(dayOffset + 1): Scheduled \(templateName)")
             }
         }
         
-        print("🎯 AUTOPILOT COMPLETE: Scheduled \(scheduledCount) workouts")
+        debugLog("🎯 AUTOPILOT COMPLETE: Scheduled \(scheduledCount) workouts")
         return scheduledCount
     }
     
@@ -255,7 +255,7 @@ final class CalendarManager {
             _ = await requestAccess()
         }
         guard hasAccess else {
-            print("❌ Cannot deploy program: No calendar access")
+            debugLog("❌ Cannot deploy program: No calendar access")
             return 0
         }
         
@@ -297,7 +297,7 @@ final class CalendarManager {
                     if success {
                         scheduledCount += 1
                         currentTemplateIndex += 1
-                        print("✅ Scheduled \\(template.name) on \\(currentDate)")
+                        debugLog("✅ Scheduled \\(template.name) on \\(currentDate)")
                     }
                 }
             }
@@ -306,7 +306,7 @@ final class CalendarManager {
             currentDate = calendar.date(byAdding: .day, value: 1, to: currentDate) ?? endDate
         }
         
-        print("🎯 AUTOPILOT COMPLETE: Scheduled \\(scheduledCount) workouts from \\(sortedTemplates.count)-day program")
+        debugLog("🎯 AUTOPILOT COMPLETE: Scheduled \\(scheduledCount) workouts from \\(sortedTemplates.count)-day program")
         return scheduledCount
     }
 
@@ -331,14 +331,14 @@ final class CalendarManager {
                 try eventStore.remove(event, span: .thisEvent, commit: true)
                 deletedCount += 1
             } catch {
-                print("❌ Failed to purge event: \(error)")
+                debugLog("❌ Failed to purge event: \(error)")
             }
         }
         
         // Refresh local cache (crude but effective)
         await fetchScheduledDates(for: now)
         
-        print("☢️ PURGED \(deletedCount) future events from calendar")
+        debugLog("☢️ PURGED \(deletedCount) future events from calendar")
         return deletedCount
     }
 }

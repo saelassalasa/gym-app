@@ -180,9 +180,9 @@ struct ExerciseDropDelegate: DropDelegate {
         guard let draggedItem = draggedItem else { return }
         
         if draggedItem.id != item.id {
-            let from = items.firstIndex(of: draggedItem)!
-            let to = items.firstIndex(of: item)!
-            
+            guard let from = items.firstIndex(of: draggedItem),
+                  let to = items.firstIndex(of: item) else { return }
+
             if items[to].id != draggedItem.id {
                 withAnimation {
                     items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)

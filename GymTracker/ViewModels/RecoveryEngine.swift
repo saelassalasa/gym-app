@@ -47,7 +47,7 @@ enum RecoveryEngine {
 
     static func volumeMultiplier(_ sets: Int) -> Double {
         guard sets > 0 else { return 0 }
-        return 1.0 + 0.12 * log(Double(sets) / 6.0)
+        return 1.0 + 0.12 * log(max(Double(sets), 1.0) / 6.0)
     }
 
     static func typeMultiplier(_ isCompound: Bool) -> Double {
@@ -124,7 +124,7 @@ enum RecoveryEngine {
             if recoveryPercent >= 0.90 {
                 hoursUntilReady = 0
             } else {
-                let currentFatigue = 1.0 - recoveryPercent
+                let currentFatigue = max(1.0 - recoveryPercent, 0.001)
                 let targetFatigue = 0.10
                 hoursUntilReady = muscle.fatigueTau * 24.0
                     * log(currentFatigue / targetFatigue)

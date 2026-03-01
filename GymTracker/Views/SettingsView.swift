@@ -197,13 +197,13 @@ struct SettingsView: View {
         Task {
             Wire.heavy()
             let count = await calendarManager.purgeFutureEvents()
-            print("☢️ Purged \(count) events from calendar")
+            debugLog("☢️ Purged \(count) events from calendar")
             dismiss()
         }
     }
     
     private func wipeHistory() {
-        print("🧹 WIPE HISTORY: Starting deletion of \(allSessions.count) sessions...")
+        debugLog("🧹 WIPE HISTORY: Starting deletion of \(allSessions.count) sessions...")
         Wire.heavy()
         
         // Delete all sessions
@@ -214,10 +214,10 @@ struct SettingsView: View {
         // Force save
         do {
             try modelContext.save()
-            print("✅ WIPE COMPLETE: All sessions deleted")
+            debugLog("✅ WIPE COMPLETE: All sessions deleted")
             Wire.success()
         } catch {
-            print("❌ WIPE FAILED: \(error)")
+            debugLog("❌ WIPE FAILED: \(error)")
         }
         
         dismiss()

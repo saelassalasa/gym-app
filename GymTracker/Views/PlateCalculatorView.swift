@@ -15,8 +15,9 @@ struct PlateCalculatorView: View {
     
     // Calculate plates needed per side
     private var platesPerSide: [Double] {
+        guard targetWeight.isFinite, barWeight.isFinite,
+              targetWeight > barWeight, targetWeight <= 2000 else { return [] }
         var remaining = (targetWeight - barWeight) / 2
-        if remaining <= 0 { return [] }
         
         var result: [Double] = []
         for plate in plates {

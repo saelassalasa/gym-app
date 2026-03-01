@@ -192,11 +192,12 @@ final class WorkoutSet {
     var exercise: Exercise?
     var session: WorkoutSession?
     
-    /// Epley Formula: 1RM = weight × (1 + reps/30)
+    /// Brzycki Formula: 1RM = weight / (1.0278 − 0.0278 × reps)
     var estimated1RM: Double {
-        guard reps > 0 && reps <= 10 else { return weight }
+        guard reps > 0, weight > 0 else { return 0 }
         if reps == 1 { return weight }
-        return weight * (1.0 + Double(reps) / 30.0)
+        guard reps < 37 else { return weight * 0.65 }
+        return weight / (1.0278 - 0.0278 * Double(reps))
     }
     
     init(

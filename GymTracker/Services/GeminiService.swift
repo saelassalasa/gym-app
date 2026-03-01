@@ -39,29 +39,35 @@ actor GeminiService {
         let request = try buildRequest(apiKey: apiKey, base64Image: base64Image)
         
         let (data, response) = try await URLSession.shared.data(for: request)
-        
+
+        // Cap response size to prevent OOM from malicious/oversized responses
+        let maxBytes = 512 * 1024
+        guard data.count <= maxBytes else {
+            throw GeminiError.parsingFailed("Response too large (\(data.count) bytes)")
+        }
+
         guard let httpResponse = response as? HTTPURLResponse else {
             throw GeminiError.invalidResponse
         }
-        
+
         guard httpResponse.statusCode == 200 else {
-            let errorBody = String(data: data, encoding: .utf8) ?? "Unknown error"
-            throw GeminiError.apiError(statusCode: httpResponse.statusCode, message: errorBody)
+            throw GeminiError.apiError(statusCode: httpResponse.statusCode)
         }
-        
+
         return try parseResponse(data)
     }
     
     // MARK: - Request Building
     
     private func buildRequest(apiKey: String, base64Image: String) throws -> URLRequest {
-        guard let url = URL(string: "\(baseURL)?key=\(apiKey)") else {
+        guard let url = URL(string: baseURL) else {
             throw GeminiError.invalidURL
         }
-        
+
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.setValue(apiKey, forHTTPHeaderField: "x-goog-api-key")
         
         let prompt = """
         Parse this workout schedule image into JSON. Extract all workout days, exercises, sets, reps, and any notes.
@@ -103,7 +109,7 @@ actor GeminiService {
             ],
             "generationConfig": [
                 "temperature": 0.1,
-                "maxOutputTokens": 4096
+                "maxOutputTokens": 1024
             ]
         ]
         
@@ -173,9 +179,9 @@ enum GeminiError: LocalizedError {
     case imageConversionFailed
     case invalidURL
     case invalidResponse
-    case apiError(statusCode: Int, message: String)
+    case apiError(statusCode: Int)
     case parsingFailed(String)
-    
+
     var errorDescription: String? {
         switch self {
         case .noAPIKey:
@@ -186,8 +192,13 @@ enum GeminiError: LocalizedError {
             return "Invalid API URL."
         case .invalidResponse:
             return "Invalid response from server."
-        case .apiError(let code, let message):
-            return "API Error (\(code)): \(message)"
+        case .apiError(let code):
+            switch code {
+            case 401, 403: return "API key invalid or quota exceeded."
+            case 429:      return "Rate limit hit. Try again later."
+            case 500...599: return "Gemini server error. Try again."
+            default:       return "Request failed (HTTP \(code))."
+            }
         case .parsingFailed(let reason):
             return "Failed to parse workout: \(reason)"
         }

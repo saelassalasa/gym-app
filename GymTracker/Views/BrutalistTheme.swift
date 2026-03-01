@@ -1,5 +1,12 @@
 import SwiftUI
 
+// MARK: - Debug Logging (compiles out in release)
+func debugLog(_ message: @autoclosure () -> String) {
+    #if DEBUG
+    print(message())
+    #endif
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 //  WIREFRAME PROTOCOL
 //  Pure monochrome. Terminal aesthetic. Data density. Zero decoration.
@@ -280,6 +287,9 @@ struct WireNumField: View {
                     .keyboardType(.decimalPad)
                     .multilineTextAlignment(.center)
                     .frame(height: 56)
+                    .onChange(of: value) { _, new in
+                        if !new.isFinite || new < 0 { value = 0 }
+                    }
                 
                 if !suffix.isEmpty {
                     Text(suffix.uppercased())

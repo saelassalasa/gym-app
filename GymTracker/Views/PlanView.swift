@@ -49,7 +49,7 @@ struct PlanView: View {
             }
         }
         .onAppear {
-            print("📱 PlanView appeared")
+            debugLog("📱 PlanView appeared")
             regenerateWeeks()
             Task {
                 await loadAllData()
@@ -314,24 +314,24 @@ struct PlanView: View {
                 .frame(width: width, height: width)
                 .contentShape(Rectangle())
                 .onTapGesture {
-                    print("👆 Tap detected on \(date)")
+                    debugLog("👆 Tap detected on \(date)")
                     
                     if isCompleted {
-                        print("✅ Already completed, ignoring")
+                        debugLog("✅ Already completed, ignoring")
                         return
                     }
                     
                     if isScheduled || isMissed {
-                        print("⚖️ Planned/Missed detected, opening command menu")
+                        debugLog("⚖️ Planned/Missed detected, opening command menu")
                         Wire.tap()
                         dateToAdjust = date
                         showAdjustmentDialog = true
                     } else if canSchedule {
-                        print("✅ Opening sheet for \(date)")
+                        debugLog("✅ Opening sheet for \(date)")
                         Wire.tap()
                         selectedDate = date
                     } else {
-                        print("❌ Past date, ignoring")
+                        debugLog("❌ Past date, ignoring")
                     }
                 }
             } else {
@@ -381,7 +381,7 @@ struct PlanView: View {
         
         isLoading = false
         refreshTrigger = UUID() // Force UI refresh
-        print("🔄 Data loaded, triggering refresh")
+        debugLog("🔄 Data loaded, triggering refresh")
     }
     
     private func regenerateWeeks() {
@@ -411,7 +411,7 @@ struct PlanView: View {
         }
         
         weeks = result
-        print("📆 Regenerated \(result.count) weeks for \(monthString)")
+        debugLog("📆 Regenerated \(result.count) weeks for \(monthString)")
     }
     
     private func loadCompletedDays() {
@@ -424,7 +424,7 @@ struct PlanView: View {
         }
         
         completedDays = completed
-        print("✅ Loaded \(completed.count) completed days")
+        debugLog("✅ Loaded \(completed.count) completed days")
     }
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -432,7 +432,7 @@ struct PlanView: View {
     // ═══════════════════════════════════════════════════════════════════════
     
     private func scheduleWorkout(templateName: String, date: Date) async {
-        print("📅 Scheduling: \(templateName) at \(date)")
+        debugLog("📅 Scheduling: \(templateName) at \(date)")
         
         // Ensure no double booking (cleanup old plan if exists)
         let _ = await calendarManager.deleteScheduledWorkout(on: date)
@@ -443,7 +443,7 @@ struct PlanView: View {
         )
         
         if success {
-            print("✅ Workout scheduled successfully")
+            debugLog("✅ Workout scheduled successfully")
             Wire.success()
             
             // Refresh the grid to show the new scheduled date
@@ -451,7 +451,7 @@ struct PlanView: View {
                 refreshTrigger = UUID()
             }
         } else {
-            print("❌ Failed to schedule workout")
+            debugLog("❌ Failed to schedule workout")
         }
     }
     
@@ -530,7 +530,7 @@ struct SchedulerSheet: View {
             }
         }
         .onAppear {
-            print("📋 SchedulerSheet appeared for \(date)")
+            debugLog("📋 SchedulerSheet appeared for \(date)")
         }
     }
     
@@ -657,7 +657,7 @@ struct SchedulerSheet: View {
             components.minute = minute
             let finalDate = Calendar.current.date(from: components) ?? date
             
-            print("🚀 Deploying: \(t.name) at \(finalDate)")
+            debugLog("🚀 Deploying: \(t.name) at \(finalDate)")
             Wire.heavy()
             onSchedule(t.name, finalDate)
             dismiss()
