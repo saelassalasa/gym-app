@@ -502,21 +502,29 @@ struct StatsHeaderView: View {
     }
     
     private func computeStreak(_ sessions: [WorkoutSession]) -> Int {
-        guard !sessions.isEmpty else { return 0 }
         let calendar = Calendar.current
+        let completed = sessions.filter { $0.isCompleted && $0.notes != "[RECOVERED]" }
+        guard !completed.isEmpty else { return 0 }
+
+        // Group by calendar day (dedup)
+        let uniqueDays = Set(completed.map { calendar.startOfDay(for: $0.date) })
+
         var streak = 0
         var day = calendar.startOfDay(for: Date())
 
-        for session in sessions {
-            let sessionDay = calendar.startOfDay(for: session.date)
-            if sessionDay == day {
-                streak += 1
-                guard let previousDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
-                day = previousDay
-            } else if sessionDay < day {
-                break
-            }
+        // Allow streak to start from yesterday if no workout today
+        if !uniqueDays.contains(day),
+           let yesterday = calendar.date(byAdding: .day, value: -1, to: day),
+           uniqueDays.contains(yesterday) {
+            day = yesterday
         }
+
+        while uniqueDays.contains(day) {
+            streak += 1
+            guard let previousDay = calendar.date(byAdding: .day, value: -1, to: day) else { break }
+            day = previousDay
+        }
+
         return streak
     }
 }
