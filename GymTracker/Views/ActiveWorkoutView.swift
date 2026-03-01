@@ -12,6 +12,7 @@ struct ActiveWorkoutView: View {
     @State private var showPlateCalc = false
     @State private var showWarmup = false
     @State private var showAbortAlert = false
+    @State private var showFinishAlert = false
     @State private var showSummary = false
     @State private var showExtraSetInput = false
 
@@ -79,6 +80,15 @@ struct ActiveWorkoutView: View {
             Button("CANCEL", role: .cancel) {}
         } message: {
             Text("All logged sets will be permanently destroyed.")
+        }
+        .alert("FINISH WORKOUT?", isPresented: $showFinishAlert) {
+            Button("FINISH", role: .destructive) {
+                manager.finishWorkout()
+                showSummary = true
+            }
+            Button("CANCEL", role: .cancel) {}
+        } message: {
+            Text("Save this session and log all sets.")
         }
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
@@ -338,7 +348,7 @@ struct ActiveWorkoutView: View {
 
             HStack(spacing: Wire.Layout.gap) {
                 WireNumField(label: "Weight", value: $manager.weightInput, suffix: "kg")
-                WireStepper(label: "Reps", value: $manager.repsInput, range: 1...30)
+                WireStepper(label: "Reps", value: $manager.repsInput, range: 1...50)
             }
 
             WireStepper(label: "RPE", value: $manager.rpeInput, range: 1...10)
@@ -410,8 +420,7 @@ struct ActiveWorkoutView: View {
             
             // FINISH BUTTON
             Button(action: {
-                manager.finishWorkout()
-                showSummary = true
+                showFinishAlert = true
             }) {
                 Text("FINISH")
                     .font(Wire.Font.body)
