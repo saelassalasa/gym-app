@@ -8,6 +8,7 @@ struct SettingsView: View {
     
     // Query ALL sessions - this is what History tab shows
     @Query(sort: \WorkoutSession.date, order: .reverse) private var allSessions: [WorkoutSession]
+    @Query private var allPrograms: [WorkoutProgram]
     
     // Future count comes from CalendarManager's EventKit data
     private var futurePlanCount: Int {
@@ -205,21 +206,30 @@ struct SettingsView: View {
     private func wipeHistory() {
         debugLog("🧹 WIPE HISTORY: Starting deletion of \(allSessions.count) sessions...")
         Wire.heavy()
-        
+
         // Delete all sessions
         for session in allSessions {
             modelContext.delete(session)
         }
-        
+
+        // Reset exercise weights on all templates to defaults
+        for program in allPrograms {
+            for template in program.orderedTemplates {
+                for exercise in template.exercises {
+                    exercise.currentWeight = 20.0
+                }
+            }
+        }
+
         // Force save
         do {
             try modelContext.save()
-            debugLog("✅ WIPE COMPLETE: All sessions deleted")
+            debugLog("✅ WIPE COMPLETE: All sessions deleted, weights reset")
             Wire.success()
         } catch {
             debugLog("❌ WIPE FAILED: \(error)")
         }
-        
+
         dismiss()
     }
 }
