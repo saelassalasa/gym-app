@@ -35,7 +35,7 @@ struct ProgramSetupView: View {
             }
             .sheet(isPresented: $showAddExercise) {
                 if days.indices.contains(selectedDayIndex) {
-                    AddExerciseSheet(exercises: $days[selectedDayIndex].exercises)
+                    ExercisePickerSheet(exercises: $days[selectedDayIndex].exercises)
                 }
             }
         }

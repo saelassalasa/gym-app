@@ -43,7 +43,7 @@ struct WorkoutTemplateView: View {
                 }
             }
             .sheet(isPresented: $showAdd) {
-                AddExerciseSheet(exercises: $exercises)
+                ExercisePickerSheet(exercises: $exercises)
             }
             .onAppear {
                 // Pre-fill if editing
