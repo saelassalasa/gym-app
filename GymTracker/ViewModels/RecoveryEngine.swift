@@ -12,6 +12,7 @@ enum RecoveryPhase: String {
     case recovering   = "RECOVERING"
     case ready        = "READY"
     case atrophyRisk  = "ATROPHY RISK"
+    case noData       = "NO DATA"
 }
 
 struct FatigueEvent {
@@ -80,13 +81,13 @@ enum RecoveryEngine {
         muscles.map { muscle in
             let relevant = events.filter { $0.muscle == muscle }
 
-            // If no events for this muscle, check if it's atrophy risk
+            // No training data for this muscle — don't flag as atrophy
             if relevant.isEmpty {
                 return MuscleStatus(
                     muscle: muscle,
                     recoveryPercent: 1.0,
                     hoursUntilReady: 0,
-                    phase: .atrophyRisk
+                    phase: .noData
                 )
             }
 

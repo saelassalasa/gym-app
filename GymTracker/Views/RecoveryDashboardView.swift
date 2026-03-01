@@ -10,6 +10,7 @@ enum RecoveryColor {
     static let recovering  = Color(hex: "FFC107") // Yellow/Amber
     static let fatigued    = Color(hex: "F44336") // Red
     static let atrophy     = Color(hex: "9C27B0") // Purple
+    static let noData      = Color(hex: "616161") // Gray
 
     static func from(_ phase: RecoveryPhase) -> Color {
         switch phase {
@@ -17,6 +18,7 @@ enum RecoveryColor {
         case .recovering:   return recovering
         case .fatigued:     return fatigued
         case .atrophyRisk:  return atrophy
+        case .noData:       return noData
         }
     }
 }
