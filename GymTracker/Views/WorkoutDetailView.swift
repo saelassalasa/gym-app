@@ -10,6 +10,13 @@ struct WorkoutDetailView: View {
     @Environment(\.modelContext) private var modelContext
     let session: WorkoutSession
     @State private var prMap: [UUID: Set<PRType>] = [:]
+
+    private static let fullDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEEE, dd MMMM yyyy 'at' HH:mm"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
     
     // Group sets by exercise
     private var exerciseGroups: [(exercise: Exercise, sets: [WorkoutSet])] {
@@ -231,9 +238,7 @@ struct WorkoutDetailView: View {
     // MARK: - Formatters
     
     private func formatFullDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEEE, dd MMMM yyyy 'at' HH:mm"
-        return f.string(from: date).uppercased()
+        Self.fullDateFormatter.string(from: date).uppercased()
     }
     
     private func formatVolume(_ volume: Double) -> String {

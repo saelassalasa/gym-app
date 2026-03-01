@@ -24,6 +24,20 @@ struct PlanView: View {
     @State private var weeks: [[Date?]] = []
     @State private var completedDays: Set<Date> = []
     @State private var refreshTrigger = UUID()
+
+    private static let monthFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "MMMM YYYY"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
+
+    private static let commandDateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE dd MMM"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
     
     // Command menu state
     @State private var dateToAdjust: Date?
@@ -182,9 +196,7 @@ struct PlanView: View {
     }
     
     private var monthString: String {
-        let f = DateFormatter()
-        f.dateFormat = "MMMM YYYY"
-        return f.string(from: displayedMonth).uppercased()
+        Self.monthFormatter.string(from: displayedMonth).uppercased()
     }
     
     // ═══════════════════════════════════════════════════════════════════════
@@ -456,9 +468,7 @@ struct PlanView: View {
     }
     
     private func formatDateForCommand(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE dd MMM"
-        return f.string(from: d).uppercased()
+        Self.commandDateFormatter.string(from: d).uppercased()
     }
 }
 
@@ -499,6 +509,13 @@ struct SchedulerSheet: View {
     // Autopilot state
     @State private var isDeploying = false
     @State private var deployedCount = 0
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "EEE dd MMM"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
     
     var body: some View {
         ZStack {
@@ -676,9 +693,7 @@ struct SchedulerSheet: View {
     }
     
     private func formatDate(_ d: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "EEE dd MMM"
-        return f.string(from: d).uppercased()
+        Self.dateFormatter.string(from: d).uppercased()
     }
     
     // MARK: - Autopilot Section (N-Day Program Support)

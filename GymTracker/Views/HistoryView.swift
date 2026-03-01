@@ -9,10 +9,17 @@ import SwiftData
 struct HistoryView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \WorkoutSession.date, order: .reverse) private var sessions: [WorkoutSession]
-    
+
     @State private var sessionToEdit: WorkoutSession?
     @State private var sessionToDelete: WorkoutSession?
     @State private var showDeleteAlert = false
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd.MM.yy HH:mm"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
     
     var body: some View {
         NavigationStack {
@@ -154,11 +161,9 @@ struct HistoryView: View {
     }
     
     private func formatDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "dd.MM.yy HH:mm"
-        return f.string(from: date)
+        Self.dateFormatter.string(from: date)
     }
-    
+
     private func deleteSession(_ session: WorkoutSession) {
         Wire.heavy()
         modelContext.delete(session)
@@ -175,8 +180,15 @@ struct HistoryView: View {
 struct SessionEditorView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
-    
+
     let session: WorkoutSession
+
+    private static let dateFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.dateFormat = "dd.MM.yy HH:mm"
+        f.locale = Locale(identifier: "en_US_POSIX")
+        return f
+    }()
     
     var body: some View {
         ZStack {
@@ -267,9 +279,7 @@ struct SessionEditorView: View {
     }
     
     private func formatDate(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.dateFormat = "dd.MM.yy HH:mm"
-        return f.string(from: date)
+        Self.dateFormatter.string(from: date)
     }
 }
 
