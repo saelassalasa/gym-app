@@ -4,8 +4,9 @@ import Security
 enum KeychainManager {
     private static let service = "saelassasolutions.GymTracker"
 
-    static func set(_ value: String, forKey key: String) {
-        guard let data = value.data(using: .utf8) else { return }
+    @discardableResult
+    static func set(_ value: String, forKey key: String) -> Bool {
+        guard let data = value.data(using: .utf8) else { return false }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,
@@ -15,7 +16,8 @@ enum KeychainManager {
         var add = query
         add[kSecValueData as String] = data
         add[kSecAttrAccessible as String] = kSecAttrAccessibleWhenUnlockedThisDeviceOnly
-        SecItemAdd(add as CFDictionary, nil)
+        let status = SecItemAdd(add as CFDictionary, nil)
+        return status == errSecSuccess
     }
 
     static func get(forKey key: String) -> String? {

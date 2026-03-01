@@ -18,6 +18,18 @@ struct ProgramSetupView: View {
     
     // Max 7 days allowed
     private let maxDays = 7
+
+    // Safe binding that guards against out-of-bounds access
+    private var safeDayExercisesBinding: Binding<[Exercise]> {
+        Binding(
+            get: { days.indices.contains(selectedDayIndex) ? days[selectedDayIndex].exercises : [] },
+            set: { newValue in
+                if days.indices.contains(selectedDayIndex) {
+                    days[selectedDayIndex].exercises = newValue
+                }
+            }
+        )
+    }
     
     var body: some View {
         NavigationStack {
@@ -34,9 +46,7 @@ struct ProgramSetupView: View {
                 }
             }
             .sheet(isPresented: $showAddExercise) {
-                if days.indices.contains(selectedDayIndex) {
-                    ExercisePickerSheet(exercises: $days[selectedDayIndex].exercises)
-                }
+                ExercisePickerSheet(exercises: safeDayExercisesBinding)
             }
         }
     }
@@ -80,7 +90,7 @@ struct ProgramSetupView: View {
     private var dayTabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 0) {
-                ForEach(days.indices, id: \.self) { index in
+                ForEach(Array(days.enumerated()), id: \.element.id) { index, _ in
                     dayTab(index)
                 }
                 
@@ -191,7 +201,7 @@ struct ProgramSetupView: View {
                 .foregroundColor(Wire.Color.gray)
             Button("×") {
                 Wire.tap()
-                days[selectedDayIndex].exercises.remove(at: index)
+                days[selectedDayIndex].exercises.removeAll(where: { $0.id == exercise.id })
             }
             .font(Wire.Font.header)
             .foregroundColor(Wire.Color.danger)
@@ -237,7 +247,9 @@ struct ProgramSetupView: View {
     private func deleteDay(at index: Int) {
         guard days.count > 1 else { return }
         days.remove(at: index)
-        if selectedDayIndex >= days.count {
+        if index < selectedDayIndex {
+            selectedDayIndex -= 1
+        } else if selectedDayIndex >= days.count {
             selectedDayIndex = days.count - 1
         }
     }

@@ -62,9 +62,10 @@ enum PRService {
             exerciseGroups[name, default: []].append(set)
         }
 
-        for (nameLowered, sets) in exerciseGroups {
-            // Fetch all completed sets for this exercise from ALL sessions
-            let allSets = fetchCompletedSets(exerciseName: nameLowered, context: context)
+        for (_, sets) in exerciseGroups {
+            // Use the original (title-cased) exercise name for the predicate query
+            guard let originalName = sets.first?.exercise?.name else { continue }
+            let allSets = fetchCompletedSets(exerciseName: originalName, context: context)
 
             // Historical bests = sets from sessions with earlier dates
             let historicalSets = allSets.filter { s in
@@ -113,9 +114,10 @@ enum PRService {
         return (try? context.fetch(descriptor)) ?? []
     }
 
+    /// Brzycki formula — matches GymModels.estimated1RM
     private static func estimatedOneRM(weight: Double, reps: Int) -> Double {
         guard reps > 0 && reps <= 10 else { return weight }
         if reps == 1 { return weight }
-        return weight * (1.0 + Double(reps) / 30.0)
+        return weight * 36.0 / (37.0 - Double(reps))
     }
 }

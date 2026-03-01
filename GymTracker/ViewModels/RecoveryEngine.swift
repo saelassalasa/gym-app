@@ -94,8 +94,7 @@ enum RecoveryEngine {
             var totalFatigue = 0.0
 
             for event in relevant {
-                let hours = now.timeIntervalSince(event.date) / 3600.0
-                guard hours > 0 else { continue }
+                let hours = max(now.timeIntervalSince(event.date) / 3600.0, 0.01)
                 let recoveryHours = effectiveRecoveryHours(event)
                 let magnitude = recoveryHours / muscle.baseRecoveryHours
                 let remaining = magnitude * fatigueRemaining(
@@ -111,24 +110,28 @@ enum RecoveryEngine {
             let hoursSinceLast = now.timeIntervalSince(mostRecent) / 3600.0
 
             let phase: RecoveryPhase
-            if hoursSinceLast > 120 { // 5+ days since last training
-                phase = .atrophyRisk
-            } else if recoveryPercent < 0.80 {
+            if recoveryPercent < 0.80 {
                 phase = .fatigued
             } else if recoveryPercent < 0.95 {
                 phase = .recovering
+            } else if hoursSinceLast > 120 { // 5+ days AND fully recovered
+                phase = .atrophyRisk
             } else {
                 phase = .ready
             }
 
             let hoursUntilReady: Double
-            if recoveryPercent >= 0.90 {
+            if recoveryPercent >= 0.95 {
                 hoursUntilReady = 0
             } else {
                 let currentFatigue = max(1.0 - recoveryPercent, 0.001)
-                let targetFatigue = 0.10
-                hoursUntilReady = muscle.fatigueTau * 24.0
-                    * log(currentFatigue / targetFatigue)
+                let targetFatigue = 0.05 // matches 0.95 threshold
+                if currentFatigue <= targetFatigue {
+                    hoursUntilReady = 0
+                } else {
+                    hoursUntilReady = muscle.fatigueTau * 24.0
+                        * log(currentFatigue / targetFatigue)
+                }
             }
 
             return MuscleStatus(

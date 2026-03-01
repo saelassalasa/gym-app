@@ -11,24 +11,31 @@ actor GeminiService {
     
     // MARK: - API Key Management
 
-    nonisolated(unsafe) static var apiKey: String? {
+    private static let keyLock = NSLock()
+
+    nonisolated static var apiKey: String? {
         get {
+            keyLock.lock()
+            defer { keyLock.unlock() }
             if let key = KeychainManager.get(forKey: "gemini_api_key") { return key }
             // One-time migration from UserDefaults
             if let legacy = UserDefaults.standard.string(forKey: "gemini_api_key"), !legacy.isEmpty {
-                KeychainManager.set(legacy, forKey: "gemini_api_key")
-                UserDefaults.standard.removeObject(forKey: "gemini_api_key")
+                if KeychainManager.set(legacy, forKey: "gemini_api_key") {
+                    UserDefaults.standard.removeObject(forKey: "gemini_api_key")
+                }
                 return legacy
             }
             return nil
         }
         set {
+            keyLock.lock()
+            defer { keyLock.unlock() }
             if let val = newValue { KeychainManager.set(val, forKey: "gemini_api_key") }
             else { KeychainManager.delete(forKey: "gemini_api_key") }
         }
     }
 
-    static func hasAPIKey() -> Bool {
+    nonisolated static func hasAPIKey() -> Bool {
         apiKey?.isEmpty == false
     }
     

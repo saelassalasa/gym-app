@@ -37,6 +37,12 @@ final class WorkoutManager {
 
     // Validation feedback
     var validationError: String? = nil
+
+    // Save error (surfaced to UI)
+    var saveError: String? = nil
+
+    // Abort flag — session deleted, no further access
+    private(set) var isAborted: Bool = false
     
     // MARK: - Computed
     
@@ -88,7 +94,12 @@ final class WorkoutManager {
         let newSession = WorkoutSession(template: localTemplate)
         newSession.sets = []
         context.insert(newSession)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            debugLog("[CRITICAL] Init save failed: \(error)")
+            saveError = "Failed to create workout session"
+        }
 
         self.session = newSession
         self._sessionID = newSession.id
@@ -200,11 +211,18 @@ final class WorkoutManager {
         guard !isSaving else { return }
         isSaving = true
         defer { isSaving = false }
-        
+
+        stopTimer()
+
         session.isCompleted = true
         session.duration = Date().timeIntervalSince(session.date)
         ProgressionManager.shared.checkAndIncrement(session: session)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            debugLog("[CRITICAL] Finish save failed: \(error)")
+            saveError = "Failed to save workout — your data may be lost"
+        }
         Wire.success()
     }
     
@@ -212,7 +230,13 @@ final class WorkoutManager {
     func abortSession() {
         stopTimer()
         context.delete(session)
-        try? context.save()
+        do {
+            try context.save()
+        } catch {
+            debugLog("[CRITICAL] Abort save failed: \(error)")
+            saveError = "Failed to delete session — restart app to clean up"
+        }
+        isAborted = true
         Wire.heavy()
     }
     

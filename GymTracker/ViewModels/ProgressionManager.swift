@@ -38,26 +38,50 @@ import SwiftData
     
     // MARK: - Progression Logic
     
-    /// Check success and increment weight for completed exercises
+    // MARK: - Weight Caps
+
+    private static let maxWeightCompound: Double = 500   // kg
+    private static let maxWeightAccessory: Double = 200   // kg
+
+    private func maxWeight(for exercise: Exercise) -> Double {
+        exercise.exerciseType == .compound ? Self.maxWeightCompound : Self.maxWeightAccessory
+    }
+
+    /// Check success and increment weight for completed exercises.
+    /// Applies deload (−10%) when majority of sets fail target reps.
     func checkAndIncrement(session: WorkoutSession) {
         guard !session.progressionApplied else { return }
         guard let template = session.template, let sets = session.sets else { return }
-        
+
         for exercise in template.exercises {
-            let exerciseSets = sets.filter { $0.exercise?.id == exercise.id }
-            
+            // Fix 4: Skip core/cardio — progression is nonsensical
+            guard exercise.category != .core, exercise.category != .cardio else { continue }
+
+            // Fix 5: Sort by setNumber before prefix check
+            let exerciseSets = sets
+                .filter { $0.exercise?.id == exercise.id }
+                .sorted { $0.setNumber < $1.setNumber }
+
             // Check if we have enough sets
-            if exerciseSets.count >= exercise.targetSets {
-                let relevantSets = exerciseSets.prefix(exercise.targetSets)
-                let allSuccessful = relevantSets.allSatisfy { set in
-                    set.reps >= exercise.targetReps && set.isCompleted
-                }
-                
-                if allSuccessful {
-                    // Increment Weight
-                    exercise.currentWeight += exercise.targetIncrement
+            guard exerciseSets.count >= exercise.targetSets else { continue }
+
+            let relevantSets = Array(exerciseSets.prefix(exercise.targetSets))
+            let successCount = relevantSets.filter { $0.reps >= exercise.targetReps && $0.isCompleted }.count
+            let allSuccessful = successCount == relevantSets.count
+
+            if allSuccessful {
+                // Increment weight
+                exercise.currentWeight += exercise.targetIncrement
+            } else {
+                // Fix 3: Deload — if majority of sets failed target reps, reduce by 10%
+                let failedCount = relevantSets.count - successCount
+                if failedCount > relevantSets.count / 2 {
+                    exercise.currentWeight *= 0.9
                 }
             }
+
+            // Fix 1 + 2: Clamp weight to [0, maxWeight]
+            exercise.currentWeight = min(max(0, exercise.currentWeight), maxWeight(for: exercise))
         }
 
         session.progressionApplied = true

@@ -98,6 +98,8 @@ struct ActiveWorkoutView: View {
                     .foregroundColor(Wire.Color.white)
             }
         }
+        .onAppear { UIApplication.shared.isIdleTimerDisabled = true }
+        .onDisappear { UIApplication.shared.isIdleTimerDisabled = false }
         .onChange(of: manager.currentExerciseIndex) {
             showExtraSetInput = false
         }
@@ -314,8 +316,7 @@ struct ActiveWorkoutView: View {
         VStack(spacing: Wire.Layout.gap) {
             if isLastExercise {
                 WireButton("FINISH WORKOUT", inverted: true) {
-                    manager.finishWorkout()
-                    showSummary = true
+                    showFinishAlert = true
                 }
             } else {
                 WireButton("NEXT EXERCISE  \u{25B6}", inverted: true) {
@@ -454,9 +455,12 @@ struct ActiveWorkoutView: View {
         .transition(.move(edge: .top).combined(with: .opacity))
         .allowsHitTesting(false)
         .frame(maxHeight: .infinity, alignment: .top)
-        .task {
-            try? await Task.sleep(for: .seconds(2))
-            withAnimation { manager.showPRBanner = false }
+        .onChange(of: manager.showPRBanner) {
+            guard manager.showPRBanner else { return }
+            Task {
+                try? await Task.sleep(for: .seconds(2))
+                withAnimation { manager.showPRBanner = false }
+            }
         }
     }
 
