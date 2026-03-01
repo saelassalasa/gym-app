@@ -11,6 +11,8 @@ struct GenerateProgramView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
 
+    var targetProgram: WorkoutProgram?
+
     @State private var templateName = ""
     @State private var style: TrainingStyle = .highIntensity
     @State private var exercises: [Exercise] = []
@@ -47,6 +49,11 @@ struct GenerateProgramView: View {
             .sheet(isPresented: $showAddExercise) {
                 ExercisePickerSheet(exercises: $exercises)
             }
+            .onAppear {
+                if let program = targetProgram, templateName.isEmpty {
+                    templateName = "DAY \(program.orderedTemplates.count + 1)"
+                }
+            }
         }
     }
 
@@ -54,10 +61,12 @@ struct GenerateProgramView: View {
 
     private var header: some View {
         HStack {
-            Text("GENERATE")
+            Text(targetProgram != nil ? "ADD DAY TO \(targetProgram!.name.uppercased())" : "GENERATE")
                 .font(Wire.Font.sub)
                 .foregroundColor(Wire.Color.white)
                 .kerning(2)
+                .lineLimit(1)
+                .minimumScaleFactor(0.6)
             Spacer()
             Button("×") { dismiss() }
                 .font(Wire.Font.header)
@@ -300,13 +309,22 @@ struct GenerateProgramView: View {
             exercise.restSeconds = rx.restSeconds
         }
 
-        // Create template and wrap in a program so it shows on the Dashboard.
-        // Dashboard queries WorkoutProgram, not standalone templates.
-        let template = WorkoutTemplate(name: templateName, dayIndex: 0, exercises: exercises)
-        let program = WorkoutProgram(name: templateName)
-        template.program = program
-        modelContext.insert(program)
-        modelContext.insert(template)
+        if let program = targetProgram {
+            // Add day to existing program
+            let nextIndex = program.orderedTemplates.count
+            let template = WorkoutTemplate(name: templateName, dayIndex: nextIndex, exercises: exercises)
+            template.program = program
+            modelContext.insert(template)
+        } else {
+            // Create template and wrap in a program so it shows on the Dashboard.
+            // Dashboard queries WorkoutProgram, not standalone templates.
+            let template = WorkoutTemplate(name: templateName, dayIndex: 0, exercises: exercises)
+            let program = WorkoutProgram(name: templateName)
+            template.program = program
+            modelContext.insert(program)
+            modelContext.insert(template)
+        }
+
         modelContext.saveSafe()
         dismiss()
     }

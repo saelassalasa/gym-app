@@ -33,6 +33,7 @@ struct DashboardView: View {
     @State private var templateToDelete: WorkoutTemplate?
     @State private var showDeleteAlert = false
     @State private var showSettings = false
+    @State private var programToAddDay: WorkoutProgram?
     
     var body: some View {
         NavigationStack {
@@ -105,6 +106,9 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $showGenerator) {
                 GenerateProgramView()
+            }
+            .sheet(item: $programToAddDay) { program in
+                GenerateProgramView(targetProgram: program)
             }
             .navigationDestination(for: WorkoutProgram.self) { program in
                 ProgramDetailView(program: program)
@@ -293,6 +297,19 @@ struct DashboardView: View {
                         ForEach(sortedTemplates) { template in
                             templateRow(template)
                         }
+                    }
+
+                    Button {
+                        Wire.tap()
+                        programToAddDay = program
+                    } label: {
+                        Text("[ + DAY ]")
+                            .font(Wire.Font.caption)
+                            .foregroundColor(Wire.Color.gray)
+                            .kerning(1)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 6)
+                            .overlay(Rectangle().stroke(Wire.Color.dark, lineWidth: Wire.Layout.border))
                     }
                 } else {
                     Text("No workouts in program")
